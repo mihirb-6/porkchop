@@ -1,14 +1,14 @@
-#[allow(unused)]
-use ::std::collections::HashMap;
 use csv::Writer;
 #[allow(unused)]
 use inquire::Select;
-use lambert_izzo::{LambertInput, RevolutionBudget, TransferWay, lambert};
+use lambert_izzo::{lambert, LambertInput, RevolutionBudget, TransferWay};
 use satkit::consts::MU_SUN;
 use satkit::jplephem::barycentric_state;
 #[allow(unused)]
 use satkit::prelude::*;
 use satkit::{Duration, Instant};
+#[allow(unused)]
+use std::collections::HashMap;
 use std::{error::Error, f64::consts::PI};
 
 //mod elements;
