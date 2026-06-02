@@ -1,0 +1,13 @@
+[package]
+name = "rust_test"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+chrono = "0.4"
+inquire = { version = "0.7", features = ["date"] }
+numeris = { version = "0.5.7", features = ["nalgebra"] }
+satkit = "0.16.2"
+csv = "1.4.0"
+lambert_izzo = "2.0.0"
+nalgebra = "0.34.2"
