@@ -1,5 +1,6 @@
 [package]
-name = "rust_test"
+name = "porkchop"
+author = "Mihir Bhagat"
 version = "0.1.0"
 edition = "2024"
 
