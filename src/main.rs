@@ -11,7 +11,7 @@ use satkit::prelude::*;
 use satkit::{Duration, Instant};
 use std::{error::Error, f64::consts::PI};
 
-mod elements;
+//mod elements;
 
 // (start, stop, step size)
 struct StepRange(f64, f64, f64);
