@@ -1,30 +1,79 @@
+#[allow(unused)]
+use numeris::Vector3;
+use satkit::consts::MU_SUN;
 use std::f64::consts::PI;
 
-use nalgebra::{Vector3, Vector6};
+#[allow(unused)]
+#[derive(Debug)]
+pub struct Elements {
+    pub angular_momentum: f64,      // kg * m^2 / s
+    pub inclination: f64,           //rad
+    pub raan: f64,                  // rad
+    pub eccentricity: f64,          // dimensionless
+    pub argument_of_periapsis: f64, // rad
+    pub true_anomaly: f64,          // rad
+}
+
+#[allow(unused)]
+impl Elements {
+    pub fn period(&self) -> f64 {
+        let a = self.seminajor_axis();
+        2. * PI * (a.powi(3) / MU_SUN).sqrt()
+    }
+    pub fn seminajor_axis(&self) -> f64 {
+        let r_p = self.periapsis();
+        let r_a = self.apoapsis();
+        (r_p + r_a) / 2.
+    }
+    pub fn eccentric_anomaly(&self) -> f64 {
+        let e = self.eccentricity;
+        let theta = self.true_anomaly;
+        2. * (((1. - e) / (1. + e)).sqrt() * (theta / 2.).tan()).atan()
+    }
+    pub fn mean_anomaly(&self) -> f64 {
+        let e1 = self.eccentric_anomaly();
+        let e = self.eccentricity;
+
+        e1 - (e * e1.sin())
+    }
+    pub fn time_since_perapsis(&self) -> f64 {
+        let h = self.angular_momentum;
+        let e = self.eccentricity;
+        let me1 = self.mean_anomaly();
+
+        (h.powi(3) / MU_SUN.powi(2)) * 1. / (1. - e.powi(2)).powf(1.5) * me1
+    }
+    pub fn periapsis(&self) -> f64 {
+        let h = self.angular_momentum;
+        let e = self.eccentricity;
+        (h.powi(2) / MU_SUN) * 1. / (1. + e * 0_f64.cos())
+    }
+    pub fn apoapsis(&self) -> f64 {
+        let h = self.angular_momentum;
+        let e = self.eccentricity;
+        (h.powi(2) / MU_SUN) * 1. / (1. + e * 180_f64.to_radians().cos())
+    }
+}
 
 // ------- get_elements --------
 // Inputs:
 //         r: position vector at time t [m]
 //         v: velocity vector at time t [m/s]
 // Outputs:
-//         (p): period [s]
 //         (elements): 6 orbital elements [h, i, raan, e, w, theta]
-//         (t_1): time since pariapsis
-//         (r_p): Periapsis [m]
-//         (r_a): Apoapsis [m]
-pub fn get_elements(
-    r: nalgebra::Vector3<f64>,
-    v: nalgebra::Vector3<f64>,
-    mu: f64,
-) -> (f64, Vector6<f64>, f64, f64) {
+pub fn get_elements(r_vector: numeris::Vector3<f64>, v_vector: numeris::Vector3<f64>) -> Elements {
     // Distance (r)
-    let mag_r = r.magnitude();
+    let r = r_vector.norm();
 
     // Speed (v)
-    let mag_v = v.magnitude();
+    let v = v_vector.norm();
 
     // Radial Velocity (v_r)
-    let vr = r.dot(&v) / mag_r;
+    let v_r = v_vector.dot(&r_vector) / r;
+
+    // Azimuthal Velocity (v_perp)
+    #[allow(unused)]
+    let v_perp = (v.powi(2) - v_r.powi(2)).sqrt();
 
     /*
     match vr {
@@ -34,73 +83,56 @@ pub fn get_elements(
     }
     */
 
-    // Specific Angular Momentum (h):
-    let h = r.cross(&v);
+    // Specific Angular Momentum Vector (h):
+    let h_vector = r_vector.cross(&v_vector);
 
     // Magnitude of h                                       =>> 1st Element
-    let mag_h = h.magnitude();
+    let h = h_vector.norm();
 
     // Inclination (i)                                      =>> 2nd Element
-    let i = (h.z / mag_h).acos();
+    let i = (h_vector.z() / h).acos();
 
     // Node line Vector (N)
-    let k: Vector3<f64> = Vector3::new(0., 0., 1.); // z-axis (K-hat) unit vector
-    let n = k.cross(&h);
+    // z-axis (K-hat) unit vector
+    let k: numeris::Vector3<f64> = numeris::Vector3::from_array([0., 0., 1.]);
+    let n_vector = k.cross(&h_vector);
 
     // Magnitude of N
-    let mag_n = n.magnitude();
+    let n = n_vector.norm();
 
     // Right Ascension of the Ascending Node (Omega) (RAAN) =>> 3rd Element
-    let mut raan = (n.x / mag_n).acos();
-
-    if n.y < 0. {
-        raan = 360. * PI / 180. - (n.x / mag_n).acos();
+    let mut raan = (n_vector.x() / n).acos();
+    if n_vector.y() < 0. {
+        raan = 2. * PI - (n_vector.x() / n).acos();
     }
 
     // Eccentricity Vecotor (e)
-    let e = (1. / mu) * ((mag_v.powi(2) - (mu / mag_r)) * &r - (mag_r * vr * &v));
+    let e_vector = (r_vector.cross(&h_vector) / MU_SUN) - (r_vector / r);
 
     // Eccentricity                                         =>> 4th Element
-    let mag_e = e.magnitude();
+    let e = e_vector.norm();
 
     // Argument of periapsis                                =>> 5th Element
-    let mut w = (n.dot(&e) / (mag_n * mag_e)).acos();
+    let mut w = (e_vector.dot(&n_vector) / (e * n)).acos();
 
-    if e.z < 0. {
-        w = 360. * PI / 180. - (n.dot(&e) / (mag_n * mag_e)).acos();
+    if e_vector.z() < 0. {
+        w = 2. * PI - (e_vector.dot(&n_vector) / (e * n)).acos();
     }
 
     // True Anomaly:                                        =>>6th Element
-    let mut theta = (e.dot(&r) / (mag_e * mag_r)).acos();
-
-    if vr < 0. {
-        theta = 360. * PI / 180. - (e.dot(&r) / (mag_e * mag_r)).acos();
+    let mut theta = (e_vector.dot(&r_vector) / (e * r)).acos();
+    if v_r < 0. {
+        theta = 2. * PI - (e_vector.dot(&r_vector) / (e * r)).acos();
     }
 
-    // Perigee and Apogee Radii
-    let r_p = (mag_h.powi(2) / mu) * 1. / (1. + mag_e * 0_f64.cos());
-    let r_a = (mag_h.powi(2) / mu) * 1. / (1. + mag_e * 180_f64.to_radians().cos());
-
-    // Semimajor Axis
-    let a = 0.5 * (r_p + r_a);
-
-    // Period
-    let period = 2. * PI / mu.sqrt() * a.powf(1.5);
-
-    // Eccentric Anomaly
-    //let e1 = 2. * (((1. - mag_e) / (1. + mag_e)).sqrt() * (theta / 2.).tan()).atan();
-
-    // Mean Anomaly
-    //let me1 = e1 - (mag_e * e1.sin());
-
-    // Time since periapsis
-    //let t_1 = (mag_h.powi(3) / mu.powi(2)) * 1. / (1. - mag_e.powi(2)).powf(1.5) * me1;
-
-    // Return a tuple of a vector containing elements + some extra info if necessary
-    (
-        period,
-        Vector6::new(mag_h, i, raan, mag_e, w, theta),
-        r_p,
-        r_a,
-    )
+    let orbital_elements = Elements {
+        angular_momentum: h,
+        inclination: i,
+        raan: raan,
+        eccentricity: e,
+        argument_of_periapsis: w,
+        true_anomaly: theta,
+    };
+    // Return a tuple of a vector containing elements
+    orbital_elements
 }
