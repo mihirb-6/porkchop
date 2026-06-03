@@ -1,7 +1,7 @@
 use csv::Writer;
 #[allow(unused)]
 use inquire::Select;
-use lambert_izzo::{lambert, LambertInput, RevolutionBudget, TransferWay};
+use lambert_izzo::{LambertInput, RevolutionBudget, TransferWay, lambert};
 use satkit::consts::MU_SUN;
 use satkit::jplephem::barycentric_state;
 #[allow(unused)]
@@ -10,6 +10,11 @@ use satkit::{Duration, Instant};
 #[allow(unused)]
 use std::collections::HashMap;
 use std::{error::Error, f64::consts::PI};
+
+#[allow(unused)]
+use crate::elements::get_elements;
+
+mod elements;
 
 //mod elements;
 
@@ -43,6 +48,9 @@ fn find_trajectories(
     Vec<(Instant, Instant, f64, f64)>,
     Vec<(Instant, Instant, f64, f64)>,
 ) {
+    // Synodic Period
+    // let syn_p = synodic_period(departure_obj, arrival_obj);
+
     println!("Calculating trajectories...");
     // dep_date, arr_date, dep_c3, arr_c3,
     let mut type1_data: Vec<(Instant, Instant, f64, f64)> = Vec::new();
@@ -59,27 +67,27 @@ fn find_trajectories(
             let departure_date = now + satkit::Duration::from_days(dep_day as f64);
             let arrival_date = departure_date + Duration::from_days(tof as f64);
 
-            let (p1_pos, p1_vel) = barycentric_state(departure_obj, &departure_date).unwrap();
-            let (p2_pos, p2_vel) = barycentric_state(arrival_obj, &arrival_date).unwrap();
+            let (r1, v1) = barycentric_state(departure_obj, &departure_date).unwrap();
+            let (r2, v2) = barycentric_state(arrival_obj, &arrival_date).unwrap();
 
-            let p1_pos: [f64; 3] = [p1_pos[0] / 1e3, p1_pos[1] / 1e3, p1_pos[2] / 1e3];
-            let p2_pos: [f64; 3] = [p2_pos[0] / 1e3, p2_pos[1] / 1e3, p2_pos[2] / 1e3];
-            let p1_vel: [f64; 3] = [p1_vel[0] / 1e3, p1_vel[1] / 1e3, p1_vel[2] / 1e3];
-            let p2_vel: [f64; 3] = [p2_vel[0] / 1e3, p2_vel[1] / 1e3, p2_vel[2] / 1e3];
+            let r1: [f64; 3] = [r1[0] / 1e3, r1[1] / 1e3, r1[2] / 1e3];
+            let r2: [f64; 3] = [r2[0] / 1e3, r2[1] / 1e3, r2[2] / 1e3];
+            let v1: [f64; 3] = [v1[0] / 1e3, v1[1] / 1e3, v1[2] / 1e3];
+            let v2: [f64; 3] = [v2[0] / 1e3, v2[1] / 1e3, v2[2] / 1e3];
 
             let tof_s = tof as f64 * 86400.;
 
             let short_input = LambertInput {
-                r1: p1_pos,
-                r2: p2_pos,
+                r1: r1,
+                r2: r2,
                 tof: tof_s,
                 mu: MU_SUN / 1e9,
                 way: TransferWay::Short,
                 revolutions: RevolutionBudget::SingleOnly,
             };
             let long_input = LambertInput {
-                r1: p1_pos,
-                r2: p2_pos,
+                r1: r1,
+                r2: r2,
                 tof: tof_s,
                 mu: MU_SUN / 1e9,
                 way: TransferWay::Long,
@@ -96,27 +104,21 @@ fn find_trajectories(
 
             // DEPARTURE EXCESS VELOCITIES
             let dep_vinf_type1: [f64; 3] = [
-                v1_short[0] - p1_vel[0],
-                v1_short[1] - p1_vel[1],
-                v1_short[2] - p1_vel[2],
+                v1_short[0] - v1[0],
+                v1_short[1] - v1[1],
+                v1_short[2] - v1[2],
             ];
-            let dep_vinf_type2: [f64; 3] = [
-                v1_long[0] - p1_vel[0],
-                v1_long[1] - p1_vel[1],
-                v1_long[2] - p1_vel[2],
-            ];
+            let dep_vinf_type2: [f64; 3] =
+                [v1_long[0] - v1[0], v1_long[1] - v1[1], v1_long[2] - v1[2]];
 
             // ARRIVAL EXCESS VELOCITIES
             let arr_vinf_type1: [f64; 3] = [
-                v2_short[0] - p2_vel[0],
-                v2_short[1] - p2_vel[1],
-                v2_short[2] - p2_vel[2],
+                v2_short[0] - v2[0],
+                v2_short[1] - v2[1],
+                v2_short[2] - v2[2],
             ];
-            let arr_vinf_type2: [f64; 3] = [
-                v2_long[0] - p2_vel[0],
-                v2_long[1] - p2_vel[1],
-                v2_long[2] - p2_vel[2],
-            ];
+            let arr_vinf_type2: [f64; 3] =
+                [v2_long[0] - v2[0], v2_long[1] - v2[1], v2_long[2] - v2[2]];
 
             // DEPARTURE C3 ENERGIES
             let dep_c3_type1 = magnitude(&dep_vinf_type1).powi(2);
@@ -162,7 +164,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     // ===================
 
     println!("Writing Type I Data to CSV...");
-    let mut wtr = Writer::from_path("/Users/memes/projects/porkchop_plot/TYPEI_OUTPUT.csv")?;
+    let mut wtr =
+        Writer::from_path("/Users/memes/projects/porkchop/plotter-python/TYPEI_OUTPUT.csv")?;
 
     wtr.write_record(&[
         "Departure Date [JD]",
@@ -190,7 +193,8 @@ fn main() -> Result<(), Box<dyn Error>> {
     // ===================
 
     println!("Writing Type II Data to CSV...");
-    let mut wtr = Writer::from_path("/Users/memes/projects/porkchop_plot/TYPEII_OUTPUT.csv")?;
+    let mut wtr =
+        Writer::from_path("/Users/memes/projects/porkchop/plotter-python/TYPEII_OUTPUT.csv")?;
 
     wtr.write_record(&[
         "Departure Date [JD]",
@@ -223,19 +227,17 @@ fn magnitude(matrix: &[f64; 3]) -> f64 {
 }
 
 #[allow(unused)]
-//tau_s = 2pi / |w_p1 - w_p2| -> w is rotational rates about the sun = 2pi / |1/p1_period - 1/p2_period|
+//tau_s = 2pi / |w_p1 - w_p2| -> w is rotational rates about the sun
+// = 2pi / |1/p1_period - 1/p2_period|
 fn synodic_period(planet1: SolarSystem, planet2: SolarSystem) -> f64 {
     let time = Instant::now();
-    let (position1, velocity1) = satkit::jplephem::barycentric_state(planet1, &time).unwrap();
-    let (position2, velocity2) = satkit::jplephem::barycentric_state(planet2, &time).unwrap();
-    let period1 = satkit::Kepler::from_pv(position1, velocity1)
-        .unwrap()
-        .period();
-    let period2 = satkit::Kepler::from_pv(position2, velocity2)
-        .unwrap()
-        .period();
 
-    2. * PI / (period1 - period2).abs()
+    let (r1, v1) = satkit::jplephem::barycentric_state(planet1, &time).unwrap();
+    let (r2, v2) = satkit::jplephem::barycentric_state(planet2, &time).unwrap();
+    let w1 = 1. / get_elements(r1, v1).period();
+    let w2 = 1. / get_elements(r2, v2).period();
+
+    (2. * PI) / (w1 - w2).abs() // 3.15576e7 sec in 1 yr
 }
 
 /*
