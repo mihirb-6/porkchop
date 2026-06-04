@@ -1,6 +1,7 @@
 #[allow(unused)]
 use numeris::Vector3;
 use satkit::consts::MU_SUN;
+use satkit::{Instant, SolarSystem};
 use std::f64::consts::PI;
 
 #[allow(unused)]
@@ -55,6 +56,14 @@ impl Elements {
     }
 }
 
+#[allow(unused)]
+#[derive(Debug)]
+pub struct Period {
+    pub synodic_period: f64, //days
+    pub mean_motion_1: f64,  // rad/day
+    pub mean_motion_2: f64,  // rad/day
+}
+
 // ------- get_elements --------
 // Inputs:
 //         r: position vector at time t [m]
@@ -107,7 +116,7 @@ pub fn get_elements(r_vector: numeris::Vector3<f64>, v_vector: numeris::Vector3<
     }
 
     // Eccentricity Vecotor (e)
-    let e_vector = (r_vector.cross(&h_vector) / MU_SUN) - (r_vector / r);
+    let e_vector = (v_vector.cross(&h_vector) / MU_SUN) - (r_vector / r);
 
     // Eccentricity                                         =>> 4th Element
     let e = e_vector.norm();
@@ -135,4 +144,24 @@ pub fn get_elements(r_vector: numeris::Vector3<f64>, v_vector: numeris::Vector3<
     };
     // Return a tuple of a vector containing elements
     orbital_elements
+}
+
+#[allow(unused)]
+//tau_s = 2pi / |w_p1 - w_p2| -> w is rotational rates about the sun
+// = 2pi / |1/p1_period - 1/p2_period|
+pub fn find_periods(planet1: SolarSystem, planet2: SolarSystem) -> Period {
+    let time = Instant::now();
+
+    let (r1, v1) = satkit::jplephem::barycentric_state(planet1, &time).unwrap();
+    let (r2, v2) = satkit::jplephem::barycentric_state(planet2, &time).unwrap();
+    let t1 = get_elements(r1, v1).period();
+    let t2 = get_elements(r2, v2).period();
+    //println!("t1: {}, t2: {}", t1, t2);
+    let syn_p = Period {
+        synodic_period: (t1 * t2) / (t1 - t2).abs() / (60 * 60 * 24) as f64,
+        mean_motion_1: 2. * PI / t1,
+        mean_motion_2: 2. * PI / t2,
+    };
+
+    syn_p
 }
