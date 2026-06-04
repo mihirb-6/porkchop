@@ -7,8 +7,8 @@ plt.style.use("dark_background")
 
 
 def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
-    df_type1 = pd.read_csv("TYPEI_OUTPUT.csv", header=0)
-    df_type2 = pd.read_csv("TYPEII_OUTPUT.csv", header=0)
+    df_type1 = pd.read_csv("TYPEI_DATA.csv", header=0)
+    df_type2 = pd.read_csv("TYPEII_DATA.csv", header=0)
 
     # x_type1,y_type1 => dtype = datetime64[ns] (numpy)
     x_type1 = pd.to_datetime(df_type1["Departure Date [JD]"], origin="julian", unit="D")
@@ -81,22 +81,13 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
             alpha=0.4,
         )
         ax.clabel(type2_arr_lines, inline=True, fontsize=7, fmt="%.0f", colors="red")
-
+        
     """
-    roi = z_type1_capped < max_C3
-    x_roi = x_type2_num[roi]
-    y_roi = y_type2_num[roi]
-    padding = 20
-
-    ax.set_xlim(x_roi.min() - padding, x_roi.max() + padding)
-    ax.set_ylim(y_roi.min() - padding, y_roi.max() + padding)
-    """
-
-    # TOF Contours
-    ax.set_xlim(x_type1_num.min(), x_type1_num.max())  # ensure limits are set first
+    # TOF Contours Lines
+    ax.set_xlim(x_type1_num.min(), x_type1_num.max())  # set limits
     ax.set_ylim(y_type1_num.min(), y_type1_num.max())
 
-    """
+
     x_right = ax.get_xlim()[1]  # right edge x value
     y_bottom, y_top = ax.get_ylim()
     for tof in np.arange(100, 600, 100):
@@ -107,7 +98,7 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
         y_at_right = x_right + tof  # y value when x = x_right
 
         if y_bottom <= y_at_right <= y_top:
-            # Line exits through the right edge — label it there
+            # Line exits through the right edge
             ax.annotate(
                 str(int(tof)),
                 xy=(x_right, y_at_right),
@@ -116,7 +107,7 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
                 va="center",
                 ha="left",
                 fontsize=8,
-                color="g",  # match your TOF line color
+                color="g",
                 annotation_clip=False,  # allow label outside axes
             )
         else:
@@ -134,6 +125,7 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
                     color="g",
                     annotation_clip=False,
                 )
+
     """
     # Axis Date Formatting
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
