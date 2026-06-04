@@ -9,12 +9,13 @@ use satkit::prelude::*;
 use satkit::{Duration, Instant};
 #[allow(unused)]
 use std::collections::HashMap;
+#[allow(unused)]
 use std::{error::Error, f64::consts::PI};
 
-#[allow(unused)]
-use crate::elements::get_elements;
-
 mod elements;
+
+#[allow(unused)]
+use crate::elements::{find_periods, get_elements};
 
 //mod elements;
 
@@ -36,6 +37,18 @@ impl Iterator for StepRange {
     }
 }
 
+/* Find Trajectories
+ * Inputs:
+ *      departure_obj
+ *      arrival_obj
+ *      min_departure_days
+ *      max_departure_days
+ *      shortest_arrival_tof
+ *      longest_arrival_tof
+ *      dep_step_size
+ * Outputs:
+ *      Two Vectors of type: Vec<(Instant, Instant, f64, f64)>
+ * */
 fn find_trajectories(
     departure_obj: satkit::SolarSystem,
     arrival_obj: satkit::SolarSystem,
@@ -48,9 +61,6 @@ fn find_trajectories(
     Vec<(Instant, Instant, f64, f64)>,
     Vec<(Instant, Instant, f64, f64)>,
 ) {
-    // Synodic Period
-    // let syn_p = synodic_period(departure_obj, arrival_obj);
-
     println!("Calculating trajectories...");
     // dep_date, arr_date, dep_c3, arr_c3,
     let mut type1_data: Vec<(Instant, Instant, f64, f64)> = Vec::new();
@@ -144,28 +154,28 @@ fn find_trajectories(
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    /* Find Trajectories
-     * Inputs:
-     *      departure_obj
-     *      arrival_obj
-     *      min_departure_days
-     *      max_departure_days
-     *      shortest_arrival_tof
-     *      longest_arrival_tof
-     *      dep_step_size
-     * Outputs:
-     *      Two Vectors of type: Vec<(Instant, Instant, f64, f64)>
-     * */
-    let (type1_data, type2_data) =
-        find_trajectories(SolarSystem::EMB, SolarSystem::Mars, 60, 300, 120, 500, 1.);
+    // Define Departure and Arrival Locations
+    let departure_object = SolarSystem::Venus;
+    let arrival_object = SolarSystem::EMB;
 
-    // ===================
-    // PROGRADE CSV OUTPUT
-    // ===================
+    // Synodic Period
+    let syn_p = find_periods(departure_object, arrival_object).synodic_period as i32;
+    println!(
+        "Synodic Period of {} & {}: {:.2} days",
+        departure_object, arrival_object, syn_p
+    );
+
+    // Calculate All Trajectories and Compute Delta-V
+    let (type1_data, type2_data) =
+        find_trajectories(departure_object, arrival_object, 1, 200, 1, 300, 1.);
+
+    // ===============================
+    // Write Type I Data to CSV Output
+    // ===============================
 
     println!("Writing Type I Data to CSV...");
     let mut wtr =
-        Writer::from_path("/Users/memes/projects/porkchop/plotter-python/TYPEI_OUTPUT.csv")?;
+        Writer::from_path("/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv")?;
 
     wtr.write_record(&[
         "Departure Date [JD]",
@@ -188,13 +198,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     wtr.flush()?;
     println!("Wrote to CSV.");
 
-    // ===================
-    // RETROGRADE CSV OUTPUT
-    // ===================
+    // ================================
+    // Write Type II Data to CSV Output
+    // ================================
 
     println!("Writing Type II Data to CSV...");
     let mut wtr =
-        Writer::from_path("/Users/memes/projects/porkchop/plotter-python/TYPEII_OUTPUT.csv")?;
+        Writer::from_path("/Users/mihir/projects/porkchop/plotter-python/TYPEII_DATA.csv")?;
 
     wtr.write_record(&[
         "Departure Date [JD]",
@@ -224,20 +234,6 @@ fn main() -> Result<(), Box<dyn Error>> {
 
 fn magnitude(matrix: &[f64; 3]) -> f64 {
     (matrix[0].powi(2) + matrix[1].powi(2) + matrix[2].powi(2)).sqrt()
-}
-
-#[allow(unused)]
-//tau_s = 2pi / |w_p1 - w_p2| -> w is rotational rates about the sun
-// = 2pi / |1/p1_period - 1/p2_period|
-fn synodic_period(planet1: SolarSystem, planet2: SolarSystem) -> f64 {
-    let time = Instant::now();
-
-    let (r1, v1) = satkit::jplephem::barycentric_state(planet1, &time).unwrap();
-    let (r2, v2) = satkit::jplephem::barycentric_state(planet2, &time).unwrap();
-    let w1 = 1. / get_elements(r1, v1).period();
-    let w2 = 1. / get_elements(r2, v2).period();
-
-    (2. * PI) / (w1 - w2).abs() // 3.15576e7 sec in 1 yr
 }
 
 /*
