@@ -37,8 +37,9 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
     x_type2_num = mdates.date2num(x_type2.dt.to_pydatetime())
     y_type2_num = mdates.date2num(y_type2.dt.to_pydatetime())
 
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(10, 8))
 
+    # Type 1 Departure Energy Contour Lines
     type1_dep_lines = ax.tricontour(
         x_type1_num,  # <-- original floats
         y_type1_num,
@@ -47,8 +48,9 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
         colors="white",
         linewidths=lw,
     )
-    ax.clabel(type1_dep_lines, inline=True, fontsize=7, fmt="%.0f", colors="white")
+    ax.clabel(type1_dep_lines, inline=True, fontsize=10, fmt="%.0f", colors="white")
 
+    # Type 2 Departure Energy Contour Lines
     type2_dep_lines = ax.tricontour(
         x_type2_num,
         y_type2_num,
@@ -57,9 +59,10 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
         colors="white",
         linewidths=lw,
     )
-    ax.clabel(type2_dep_lines, inline=True, fontsize=7, fmt="%.0f", colors="white")
+    ax.clabel(type2_dep_lines, inline=True, fontsize=10, fmt="%.0f", colors="white")
 
     if arrival:
+        # Type 1 Arrival Energy Contour Lines
         type1_arr_lines = ax.tricontour(
             x_type1_num,
             y_type1_num,
@@ -67,10 +70,11 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
             levels=levels,
             colors="red",
             linewidths=lw,
-            alpha=0.4,
+            alpha=0.5,
         )
-        ax.clabel(type1_arr_lines, inline=True, fontsize=7, fmt="%.0f", colors="red")
+        ax.clabel(type1_arr_lines, inline=True, fontsize=10, fmt="%.0f", colors="red")
 
+        # Type 2 Arrival Energy Contour Lines
         type2_arr_lines = ax.tricontour(
             x_type1_num,
             y_type1_num,
@@ -78,21 +82,19 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
             levels=levels,
             colors="red",
             linewidths=lw,
-            alpha=0.4,
+            alpha=0.5,
         )
-        ax.clabel(type2_arr_lines, inline=True, fontsize=7, fmt="%.0f", colors="red")
-        
+        ax.clabel(type2_arr_lines, inline=True, fontsize=10, fmt="%.0f", colors="red")
+
     """
     # TOF Contours Lines
     ax.set_xlim(x_type1_num.min(), x_type1_num.max())  # set limits
     ax.set_ylim(y_type1_num.min(), y_type1_num.max())
-
-
     x_right = ax.get_xlim()[1]  # right edge x value
     y_bottom, y_top = ax.get_ylim()
     for tof in np.arange(100, 600, 100):
         y_line = x_type1_num + tof  # y = x + TOF (constant TOF diagonal)
-        ax.plot(x_type1_num, y_line, "g", lw=0.7)
+        ax.plot(x_type1_num, y_line, "g", lw=0.3)
 
         # Find where the line intersects the right edge or top edge
         y_at_right = x_right + tof  # y value when x = x_right
@@ -106,7 +108,7 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
                 textcoords="offset points",
                 va="center",
                 ha="left",
-                fontsize=8,
+                fontsize=10,
                 color="g",
                 annotation_clip=False,  # allow label outside axes
             )
@@ -121,12 +123,12 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
                     textcoords="offset points",
                     va="bottom",
                     ha="center",
-                    fontsize=8,
+                    fontsize=10,
                     color="g",
                     annotation_clip=False,
                 )
-
     """
+
     # Axis Date Formatting
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b-%Y"))
@@ -135,8 +137,8 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
     ax.yaxis.set_major_formatter(mdates.DateFormatter("%d-%b-%Y"))
 
     # Axis Label Formatting
-    ax.tick_params(axis="x", rotation=45, labelsize=8)
-    ax.tick_params(axis="y", labelsize=8)
+    ax.tick_params(axis="x", rotation=45, labelsize=10)
+    ax.tick_params(axis="y", labelsize=10)
 
     # Plot Formatting
     plt.tight_layout()
@@ -144,10 +146,10 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
     plt.xlabel("Departure Date", weight="bold")
     plt.ylabel("Arrival Date", weight="bold")
     fig.autofmt_xdate(rotation=45, ha="right")
-    plt.grid(True, linestyle="dotted", alpha=0.5)
+    plt.grid(True, linestyle="dotted", alpha=0.3)
     plt.show()
 
 
 if __name__ == "__main__":
-    levels = [10, 12, 14, 16, 18, 20, 25, 30, 35, 40, 45, 50]
-    dual_plot(lw=0.5, levels=levels, dep_max_C3=50, arr_max_C3=50, arrival=False)
+    max_C3 = 50
+    dual_plot(lw=0.5, levels=12, dep_max_C3=20, arr_max_C3=20, arrival=True)
