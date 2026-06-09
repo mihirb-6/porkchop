@@ -153,7 +153,7 @@ fn find_trajectories(
     (type1_data, type2_data)
 }
 
-fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     // Define Departure and Arrival Locations
     let departure_object = SolarSystem::Venus;
     let arrival_object = SolarSystem::EMB;
@@ -169,66 +169,44 @@ fn main() -> Result<(), Box<dyn Error>> {
     let (type1_data, type2_data) =
         find_trajectories(departure_object, arrival_object, 1, 200, 1, 300, 1.);
 
-    // ===============================
-    // Write Type I Data to CSV Output
-    // ===============================
+    // Write data to separate csv's
+    let type1_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv";
+    let type2_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEII_DATA.csv";
+    write_to_csv(type1_path, &type1_data).unwrap();
+    write_to_csv(type2_path, &type2_data).unwrap();
 
-    println!("Writing Type I Data to CSV...");
-    let mut wtr =
-        Writer::from_path("/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv")?;
-
-    wtr.write_record(&[
-        "Departure Date [JD]",
-        "Arrival Date [JD]",
-        "Departure C3 [km^2/s^2]",
-        "Arrival C3 [km^2/s^2]",
-    ])
-    .expect("Failed to write headers");
-
-    for (dep_date, arr_date, dep_c3, arr_c3) in &type1_data {
-        wtr.write_record(&[
-            dep_date.as_jd_with_scale(TimeScale::UTC).to_string(),
-            arr_date.as_jd_with_scale(TimeScale::UTC).to_string(),
-            dep_c3.to_string(),
-            arr_c3.to_string(),
-        ])
-        .expect("Failed to write record")
-    }
-
-    wtr.flush()?;
-    println!("Wrote to CSV.");
-
-    // ================================
-    // Write Type II Data to CSV Output
-    // ================================
-
-    println!("Writing Type II Data to CSV...");
-    let mut wtr =
-        Writer::from_path("/Users/mihir/projects/porkchop/plotter-python/TYPEII_DATA.csv")?;
-
-    wtr.write_record(&[
-        "Departure Date [JD]",
-        "Arrival Date [JD]",
-        "Departure C3 [km^2/s^2]",
-        "Arrival C3 [km^2/s^2]",
-    ])
-    .expect("Failed to write headers");
-
-    for (dep_date, arr_date, dep_c3, arr_c3) in &type2_data {
-        wtr.write_record(&[
-            dep_date.as_jd_with_scale(TimeScale::UTC).to_string(),
-            arr_date.as_jd_with_scale(TimeScale::UTC).to_string(),
-            dep_c3.to_string(),
-            arr_c3.to_string(),
-        ])
-        .expect("Failed to write record")
-    }
-
-    wtr.flush()?;
-    println!("Wrote to CSV.");
-
-    #[allow(unused)]
     //let test_time = find_zero_phase(SolarSystem::EMB, SolarSystem::Mars, 1.0, 0.25);
+}
+
+/* Helper Funcion to write trajectory data to a CSV */
+fn write_to_csv(
+    path: &'static str,
+    data: &Vec<(Instant, Instant, f64, f64)>,
+) -> Result<(), Box<dyn Error>> {
+    println!("Writing {}...", path);
+
+    let mut wtr = Writer::from_path(path)?;
+
+    wtr.write_record(&[
+        "Departure Date [JD]",
+        "Arrival Date [JD]",
+        "Departure C3 [km^2/s^2]",
+        "Arrival C3 [km^2/s^2]",
+    ])
+    .expect("Failed to write headers");
+
+    for (dep_date, arr_date, dep_c3, arr_c3) in data {
+        wtr.write_record(&[
+            dep_date.as_jd_with_scale(TimeScale::UTC).to_string(),
+            arr_date.as_jd_with_scale(TimeScale::UTC).to_string(),
+            dep_c3.to_string(),
+            arr_c3.to_string(),
+        ])
+        .expect("Failed to write record")
+    }
+
+    wtr.flush()?;
+    println!("Wrote to CSV.");
     Ok(())
 }
 
