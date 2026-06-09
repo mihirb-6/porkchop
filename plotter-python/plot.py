@@ -6,30 +6,30 @@ import pandas as pd
 plt.style.use("dark_background")
 
 
-def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
+def plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
     df_type1 = pd.read_csv("TYPEI_DATA.csv", header=0)
     df_type2 = pd.read_csv("TYPEII_DATA.csv", header=0)
 
     # x_type1,y_type1 => dtype = datetime64[ns] (numpy)
     x_type1 = pd.to_datetime(df_type1["Departure Date [JD]"], origin="julian", unit="D")
     y_type1 = pd.to_datetime(df_type1["Arrival Date [JD]"], origin="julian", unit="D")
-    z_type1 = df_type1["Departure C3 [km^2/s^2]"]
-    z2_type1 = df_type1["Arrival C3 [km^2/s^2]"]
+    C3_dep_type1 = df_type1["Departure C3 [km^2/s^2]"]
+    C3_arr_type1 = df_type1["Arrival C3 [km^2/s^2]"]
 
     x_type2 = pd.to_datetime(df_type2["Departure Date [JD]"], origin="julian", unit="D")
     y_type2 = pd.to_datetime(df_type2["Arrival Date [JD]"], origin="julian", unit="D")
-    z_type2 = df_type2["Departure C3 [km^2/s^2]"]
-    z2_type2 = df_type2["Arrival C3 [km^2/s^2]"]
+    C3_dep_type2 = df_type2["Departure C3 [km^2/s^2]"]
+    C3_arr_type2 = df_type2["Arrival C3 [km^2/s^2]"]
 
-    # Departure C3 Short
-    z_type1_capped = np.clip(z_type1, a_min=None, a_max=dep_max_C3)
-    # Departure C3 Long
-    z_type2_capped = np.clip(z_type2, a_min=None, a_max=dep_max_C3)
+    # Departure C3 Type 1
+    C3_dep_type1_cap = np.clip(C3_dep_type1, a_min=None, a_max=dep_max_C3)
+    # Departure C3 Type 2
+    C3_dep_type2_cap = np.clip(C3_dep_type2, a_min=None, a_max=dep_max_C3)
 
-    # Arrival C3 Short
-    z2_type1_capped = np.clip(z2_type1, a_min=None, a_max=arr_max_C3)
-    # Arrival C3 Long
-    z2_type2_capped = np.clip(z2_type2, a_min=None, a_max=arr_max_C3)
+    # Arrival C3 Type 1
+    C3_arr_type1_cap = np.clip(C3_arr_type1, a_min=None, a_max=arr_max_C3)
+    # Arrival C3 Type 2
+    C3_arr_type2_cap = np.clip(C3_arr_type2, a_min=None, a_max=arr_max_C3)
 
     # Convert BEFORE passing to tricontour
     x_type1_num = mdates.date2num(x_type1.dt.to_pydatetime())
@@ -41,9 +41,9 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
 
     # Type 1 Departure Energy Contour Lines
     type1_dep_lines = ax.tricontour(
-        x_type1_num,  # <-- original floats
+        x_type1_num,  # <-- original floats from Julian Date
         y_type1_num,
-        z_type1_capped,
+        C3_dep_type1_cap,
         levels=levels,
         colors="white",
         linewidths=lw,
@@ -54,7 +54,7 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
     type2_dep_lines = ax.tricontour(
         x_type2_num,
         y_type2_num,
-        z_type2_capped,
+        C3_dep_type2_cap,
         levels=levels,
         colors="white",
         linewidths=lw,
@@ -66,7 +66,7 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
         type1_arr_lines = ax.tricontour(
             x_type1_num,
             y_type1_num,
-            z2_type1_capped,
+            C3_arr_type1_cap,
             levels=levels,
             colors="red",
             linewidths=lw,
@@ -78,7 +78,7 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
         type2_arr_lines = ax.tricontour(
             x_type1_num,
             y_type1_num,
-            z2_type2_capped,
+            C3_arr_type2_cap,
             levels=levels,
             colors="red",
             linewidths=lw,
@@ -151,5 +151,4 @@ def dual_plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
 
 
 if __name__ == "__main__":
-    max_C3 = 50
-    dual_plot(lw=0.5, levels=12, dep_max_C3=20, arr_max_C3=20, arrival=True)
+    plot(lw=0.5, levels=10, dep_max_C3=20, arr_max_C3=20, arrival=False)
