@@ -1,3 +1,5 @@
+from ast import Raise
+
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
@@ -5,21 +7,50 @@ import pandas as pd
 
 plt.style.use("dark_background")
 
+df_type1 = pd.read_csv("TYPEI_DATA.csv", header=0)
+df_type2 = pd.read_csv("TYPEII_DATA.csv", header=0)
 
-def plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
-    df_type1 = pd.read_csv("TYPEI_DATA.csv", header=0)
-    df_type2 = pd.read_csv("TYPEII_DATA.csv", header=0)
+# x_type1,y_type1 => dtype = datetime64[ns] (numpy)
+x_type1 = pd.to_datetime(df_type1["Departure Date [JD]"], origin="julian", unit="D")
+y_type1 = pd.to_datetime(df_type1["Arrival Date [JD]"], origin="julian", unit="D")
 
-    # x_type1,y_type1 => dtype = datetime64[ns] (numpy)
-    x_type1 = pd.to_datetime(df_type1["Departure Date [JD]"], origin="julian", unit="D")
-    y_type1 = pd.to_datetime(df_type1["Arrival Date [JD]"], origin="julian", unit="D")
-    C3_dep_type1 = df_type1["Departure C3 [km^2/s^2]"]
-    C3_arr_type1 = df_type1["Arrival C3 [km^2/s^2]"]
+x_type2 = pd.to_datetime(df_type2["Departure Date [JD]"], origin="julian", unit="D")
+y_type2 = pd.to_datetime(df_type2["Arrival Date [JD]"], origin="julian", unit="D")
 
-    x_type2 = pd.to_datetime(df_type2["Departure Date [JD]"], origin="julian", unit="D")
-    y_type2 = pd.to_datetime(df_type2["Arrival Date [JD]"], origin="julian", unit="D")
-    C3_dep_type2 = df_type2["Departure C3 [km^2/s^2]"]
-    C3_arr_type2 = df_type2["Arrival C3 [km^2/s^2]"]
+# Convert BEFORE passing to tricontour
+x_type1_num = mdates.date2num(x_type1.dt.to_pydatetime())
+y_type1_num = mdates.date2num(y_type1.dt.to_pydatetime())
+x_type2_num = mdates.date2num(x_type2.dt.to_pydatetime())
+y_type2_num = mdates.date2num(y_type2.dt.to_pydatetime())
+
+# TOF
+tof_type1 = y_type1_num - x_type1_num
+
+# Type I and II Departure and Arrival Energies (C3) [km^2/s^2]
+C3_dep_type1 = df_type1["Departure C3 [km^2/s^2]"]
+C3_arr_type1 = df_type1["Arrival C3 [km^2/s^2]"]
+C3_dep_type2 = df_type2["Departure C3 [km^2/s^2]"]
+C3_arr_type2 = df_type2["Arrival C3 [km^2/s^2]"]
+
+# Type I and II Departure and Arrival Delta-V [km/s]
+deltaV_dep_type1 = np.sqrt(C3_dep_type1)
+
+
+def plot_tof_vs_DV():
+    plt.figure(2)
+    if tof_type1 is not None and deltaV_dep_type1 is not None:
+        pmin = np.percentile(deltaV_dep_type1, 5)
+        pmax = np.percentile(deltaV_dep_type1, 40)
+        clipped = np.clip(deltaV_dep_type1, a_min=pmin, a_max=pmax)
+        plt.scatter(tof_type1, clipped, s=0.1)
+    plt.title("TOF vs. Delta-V")
+    plt.ylabel("Delta-V [km/s]")
+    plt.xlabel("Time of Flight (TOF) [Days]")
+    plt.grid(True, linestyle="dotted", alpha=0.3)
+    plt.savefig("tof_vs_deltaV.png", dpi=300)
+
+
+def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
 
     # Departure C3 Type 1
     C3_dep_type1_cap = np.clip(C3_dep_type1, a_min=None, a_max=dep_max_C3)
@@ -30,12 +61,6 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
     C3_arr_type1_cap = np.clip(C3_arr_type1, a_min=None, a_max=arr_max_C3)
     # Arrival C3 Type 2
     C3_arr_type2_cap = np.clip(C3_arr_type2, a_min=None, a_max=arr_max_C3)
-
-    # Convert BEFORE passing to tricontour
-    x_type1_num = mdates.date2num(x_type1.dt.to_pydatetime())
-    y_type1_num = mdates.date2num(y_type1.dt.to_pydatetime())
-    x_type2_num = mdates.date2num(x_type2.dt.to_pydatetime())
-    y_type2_num = mdates.date2num(y_type2.dt.to_pydatetime())
 
     fig, ax = plt.subplots(figsize=(10, 8))
 
@@ -61,7 +86,7 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
     )
     ax.clabel(type2_dep_lines, inline=True, fontsize=10, fmt="%.0f", colors="white")
 
-    if arrival:
+    if plot_arrival:
         # Type 1 Arrival Energy Contour Lines
         type1_arr_lines = ax.tricontour(
             x_type1_num,
@@ -147,8 +172,9 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, arrival):
     plt.ylabel("Arrival Date", weight="bold")
     fig.autofmt_xdate(rotation=45, ha="right")
     plt.grid(True, linestyle="dotted", alpha=0.3)
-    plt.show()
+    plt.savefig("porkchop_plot.png", dpi=300)
 
 
 if __name__ == "__main__":
-    plot(lw=0.5, levels=10, dep_max_C3=20, arr_max_C3=20, arrival=False)
+    plot(lw=0.5, levels=10, dep_max_C3=20, arr_max_C3=20, plot_arrival=True)
+    plot_tof_vs_DV()
