@@ -1,9 +1,8 @@
-from ast import Raise
-
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from matplotlib.lines import Line2D
 
 plt.style.use("dark_background")
 
@@ -25,6 +24,7 @@ y_type2_num = mdates.date2num(y_type2.dt.to_pydatetime())
 
 # TOF
 tof_type1 = y_type1_num - x_type1_num
+tof_type2 = y_type2_num - x_type2_num
 
 # Type I and II Departure and Arrival Energies (C3) [km^2/s^2]
 C3_dep_type1 = df_type1["Departure C3 [km^2/s^2]"]
@@ -34,20 +34,66 @@ C3_arr_type2 = df_type2["Arrival C3 [km^2/s^2]"]
 
 # Type I and II Departure and Arrival Delta-V [km/s]
 deltaV_dep_type1 = np.sqrt(C3_dep_type1)
+deltaV_arr_type1 = np.sqrt(C3_arr_type1)
+deltaV_dep_type2 = np.sqrt(C3_dep_type2)
+deltaV_arr_type2 = np.sqrt(C3_arr_type2)
 
 
-def plot_tof_vs_DV():
-    plt.figure(2)
-    if tof_type1 is not None and deltaV_dep_type1 is not None:
-        pmin = np.percentile(deltaV_dep_type1, 5)
-        pmax = np.percentile(deltaV_dep_type1, 40)
-        clipped = np.clip(deltaV_dep_type1, a_min=pmin, a_max=pmax)
-        plt.scatter(tof_type1, clipped, s=0.1)
-    plt.title("TOF vs. Delta-V")
-    plt.ylabel("Delta-V [km/s]")
-    plt.xlabel("Time of Flight (TOF) [Days]")
-    plt.grid(True, linestyle="dotted", alpha=0.3)
-    plt.savefig("tof_vs_deltaV.png", dpi=300)
+tofs = np.array([tof_type1, tof_type1, tof_type2, tof_type2])
+
+delta_vs = np.array(
+    [deltaV_dep_type1, deltaV_arr_type1, deltaV_dep_type2, deltaV_arr_type2]
+)
+
+
+def plot_tof_vs_DV(pmin, pmax):
+    # Temporary array that will be filld in clipped values from all delta_vs
+    temp = []
+
+    # Clipping
+    for i in range(len(delta_vs)):
+        min = np.percentile(delta_vs[i], pmin)
+        max = np.percentile(delta_vs[i], pmax)
+        cap = np.clip(delta_vs[i], a_min=min, a_max=max)
+        temp.append(cap)
+
+    # Store in numpy arr
+    capped_delta_vs = np.array(temp)
+
+    # Create fig + ax objects
+    fig, axs = plt.subplots(2, 2)
+
+    # Flatten axes for easier plotting
+    flat_axs = axs.flatten()
+
+    # Scatter plot
+    for i in range(len(capped_delta_vs)):
+        ax = flat_axs[i]
+
+        ax.scatter(tofs[i], capped_delta_vs[i], s=0.1, color=f"C{i}")
+        ax.grid(True, linestyle="dotted", alpha=0.3)
+
+    # Formatting
+    fig.suptitle("TOF vs. Delta-V", weight="bold")
+    fig.supylabel("Delta-V [km/s]", weight="bold")
+    fig.supxlabel("Time of Flight (TOF) [Days]", weight="bold")
+    # Custom legend format
+    custom_lines = [
+        Line2D([0], [0], color="C1", lw=1),
+        Line2D([0], [0], color="C2", lw=1),
+        Line2D([0], [0], color="C3", lw=1),
+        Line2D([0], [0], color="C4", lw=1),
+    ]
+    fig.legend(
+        custom_lines,
+        ["Departure Type I", "Arrival Type I", "Departure Type II", "Arrival Type II"],
+        ncol=4,
+        loc="lower center",
+        fontsize=5,
+        bbox_to_anchor=(0.5, 0.05),
+    )
+    fig.tight_layout()
+    fig.savefig("tof_vs_deltaV.png", dpi=300)
 
 
 def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
@@ -62,7 +108,8 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
     # Arrival C3 Type 2
     C3_arr_type2_cap = np.clip(C3_arr_type2, a_min=None, a_max=arr_max_C3)
 
-    fig, ax = plt.subplots(figsize=(10, 8))
+    # Create fig + ax objects
+    fig, ax = plt.subplots()
 
     # Type 1 Departure Energy Contour Lines
     type1_dep_lines = ax.tricontour(
@@ -73,7 +120,7 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
         colors="white",
         linewidths=lw,
     )
-    ax.clabel(type1_dep_lines, inline=True, fontsize=10, fmt="%.0f", colors="white")
+    ax.clabel(type1_dep_lines, inline=True, fontsize=7, fmt="%.0f", colors="white")
 
     # Type 2 Departure Energy Contour Lines
     type2_dep_lines = ax.tricontour(
@@ -84,7 +131,7 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
         colors="white",
         linewidths=lw,
     )
-    ax.clabel(type2_dep_lines, inline=True, fontsize=10, fmt="%.0f", colors="white")
+    ax.clabel(type2_dep_lines, inline=True, fontsize=7, fmt="%.0f", colors="white")
 
     if plot_arrival:
         # Type 1 Arrival Energy Contour Lines
@@ -97,7 +144,7 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
             linewidths=lw,
             alpha=0.5,
         )
-        ax.clabel(type1_arr_lines, inline=True, fontsize=10, fmt="%.0f", colors="red")
+        ax.clabel(type1_arr_lines, inline=True, fontsize=7, fmt="%.0f", colors="red")
 
         # Type 2 Arrival Energy Contour Lines
         type2_arr_lines = ax.tricontour(
@@ -109,7 +156,7 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
             linewidths=lw,
             alpha=0.5,
         )
-        ax.clabel(type2_arr_lines, inline=True, fontsize=10, fmt="%.0f", colors="red")
+        ax.clabel(type2_arr_lines, inline=True, fontsize=7, fmt="%.0f", colors="red")
 
     """
     # TOF Contours Lines
@@ -166,15 +213,23 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
     ax.tick_params(axis="y", labelsize=10)
 
     # Plot Formatting
-    plt.tight_layout()
-    plt.title("Ballistic Transfer Trajectories")
+    plt.title("2026 Earth -> Mars Ballistic Transfer Trajectories", weight="bold")
     plt.xlabel("Departure Date", weight="bold")
     plt.ylabel("Arrival Date", weight="bold")
     fig.autofmt_xdate(rotation=45, ha="right")
     plt.grid(True, linestyle="dotted", alpha=0.3)
+
+    # Custom legend format
+    custom_lines = [
+        Line2D([0], [0], color="white", lw=1),
+        Line2D([0], [0], color="red", lw=1),
+    ]
+    plt.legend(custom_lines, ["Departure C3", "Arrival C3"])
+    plt.tight_layout()
+
     plt.savefig("porkchop_plot.png", dpi=300)
 
 
 if __name__ == "__main__":
-    plot(lw=0.5, levels=10, dep_max_C3=20, arr_max_C3=20, plot_arrival=True)
-    plot_tof_vs_DV()
+    plot(lw=0.5, levels=10, dep_max_C3=50, arr_max_C3=50, plot_arrival=True)
+    plot_tof_vs_DV(pmin=10, pmax=40)
