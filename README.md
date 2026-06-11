@@ -2,4 +2,4 @@
 ---
 
 Example Porkchop Plot:
-![porkchop](./plotter-python/porkchop_plot.png)
+![porkchop](https://github.com/mihirb-6/porkchop/blob/main/examples/porkchop_plot.png)
