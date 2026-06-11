@@ -155,8 +155,8 @@ fn find_trajectories(
 
 fn main() {
     // Define Departure and Arrival Locations
-    let departure_object = SolarSystem::Venus;
-    let arrival_object = SolarSystem::EMB;
+    let departure_object = SolarSystem::EMB;
+    let arrival_object = SolarSystem::Mars;
 
     // Synodic Period
     let syn_p = find_periods(departure_object, arrival_object).synodic_period as i32;
@@ -166,8 +166,9 @@ fn main() {
     );
 
     // Calculate All Trajectories and Compute Delta-V
+    // dep_obj, arr_obj, min_dep, max_dep, min_tof, max_tof, dep_step_size
     let (type1_data, type2_data) =
-        find_trajectories(departure_object, arrival_object, 1, 200, 1, 300, 1.);
+        find_trajectories(departure_object, arrival_object, 30, 270, 110, 500, 2.);
 
     // Write data to separate csv's
     let type1_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv";
