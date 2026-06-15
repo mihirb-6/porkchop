@@ -1,0 +1,11 @@
+{
+  "venvPath": "/Users/mihir/projects/porkchop/plotter-python/",
+  "venv": ".venv",
+  "reportUnknownArgumentType": false,
+  "reportUnknownVariableType": false,
+  "reportUnknownMemberType": false,
+  "reportUnknownParameterType": false,
+  "reportUnusedCallResult": false,
+  "reportAny": false,
+  "reportMissingParameterType": false,
+}
