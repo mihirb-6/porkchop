@@ -14,6 +14,7 @@ use std::{error::Error, f64::consts::PI};
 
 mod elements;
 
+use crate::elements::hohmann_transfer_time;
 #[allow(unused)]
 use crate::elements::{find_periods, get_elements};
 
@@ -27,6 +28,10 @@ impl Iterator for StepRange {
 
     #[inline]
     fn next(&mut self) -> Option<f64> {
+        // self.0 = starting value
+        // self.1 = ending value
+        // self.2 = step size value
+
         if self.0 < self.1 {
             let v = self.0;
             self.0 = v + self.2;
@@ -35,6 +40,13 @@ impl Iterator for StepRange {
             None
         }
     }
+}
+
+struct SearchBounds {
+    dep_start: i32,
+    dep_end: i32,
+    tof_min: i32,
+    tof_max: i32,
 }
 
 /* Find Trajectories
@@ -139,7 +151,6 @@ fn find_trajectories(
             let arr_c3_type2 = magnitude(&arr_vinf_type2).powi(2);
 
             type1_data.push((departure_date, arrival_date, dep_c3_type1, arr_c3_type1));
-
             type2_data.push((departure_date, arrival_date, dep_c3_type2, arr_c3_type2));
         }
     }
@@ -159,24 +170,39 @@ fn main() {
     let arrival_object = SolarSystem::Mars;
 
     // Synodic Period
-    let syn_p = find_periods(departure_object, arrival_object).synodic_period as i32;
+    let syn_p = find_periods(departure_object, arrival_object).synodic_period;
     println!(
         "Synodic Period of {} & {}: {:.2} days",
         departure_object, arrival_object, syn_p
     );
 
+    let hohmann_t = hohmann_transfer_time(departure_object, arrival_object);
+    let search = SearchBounds {
+        dep_start: (0.1 * syn_p) as i32,
+        dep_end: (0.3 * syn_p) as i32,
+        tof_min: (0.1 * hohmann_t) as i32,
+        tof_max: (2. * hohmann_t) as i32,
+    };
+
+    println!("{}", search.dep_start);
+
     // Calculate All Trajectories and Compute Delta-V
     // dep_obj, arr_obj, min_dep, max_dep, min_tof, max_tof, dep_step_size
-    let (type1_data, type2_data) =
-        find_trajectories(departure_object, arrival_object, 30, 270, 110, 500, 2.);
+    let (type1_data, type2_data) = find_trajectories(
+        departure_object,
+        arrival_object,
+        search.dep_start,
+        search.dep_end,
+        search.tof_min,
+        search.tof_max,
+        1.,
+    );
 
     // Write data to separate csv's
     let type1_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv";
     let type2_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEII_DATA.csv";
     write_to_csv(type1_path, &type1_data).unwrap();
     write_to_csv(type2_path, &type2_data).unwrap();
-
-    //let test_time = find_zero_phase(SolarSystem::EMB, SolarSystem::Mars, 1.0, 0.25);
 }
 
 /* Helper Funcion to write trajectory data to a CSV */
@@ -211,6 +237,7 @@ fn write_to_csv(
     Ok(())
 }
 
+/* Simple Magnitude Calculation */
 fn magnitude(matrix: &[f64; 3]) -> f64 {
     (matrix[0].powi(2) + matrix[1].powi(2) + matrix[2].powi(2)).sqrt()
 }
