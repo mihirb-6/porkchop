@@ -12,7 +12,6 @@ df_type2 = pd.read_csv("TYPEII_DATA.csv", header=0)
 # x_type1,y_type1 => dtype = datetime64[ns] (numpy)
 x_type1 = pd.to_datetime(df_type1["Departure Date [JD]"], origin="julian", unit="D")
 y_type1 = pd.to_datetime(df_type1["Arrival Date [JD]"], origin="julian", unit="D")
-
 x_type2 = pd.to_datetime(df_type2["Departure Date [JD]"], origin="julian", unit="D")
 y_type2 = pd.to_datetime(df_type2["Arrival Date [JD]"], origin="julian", unit="D")
 
@@ -26,6 +25,7 @@ y_type2_num = mdates.date2num(y_type2.dt.to_pydatetime())
 tof_type1 = y_type1_num - x_type1_num
 tof_type2 = y_type2_num - x_type2_num
 
+
 # Type I and II Departure and Arrival Energies (C3) [km^2/s^2]
 C3_dep_type1 = df_type1["Departure C3 [km^2/s^2]"]
 C3_arr_type1 = df_type1["Arrival C3 [km^2/s^2]"]
@@ -37,7 +37,6 @@ deltaV_dep_type1 = np.sqrt(C3_dep_type1)
 deltaV_arr_type1 = np.sqrt(C3_arr_type1)
 deltaV_dep_type2 = np.sqrt(C3_dep_type2)
 deltaV_arr_type2 = np.sqrt(C3_arr_type2)
-
 
 tofs = np.array([tof_type1, tof_type1, tof_type2, tof_type2])
 
@@ -213,7 +212,7 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
     ax.tick_params(axis="y", labelsize=10)
 
     # Plot Formatting
-    plt.title("2026 Earth -> Mars Ballistic Transfer Trajectories", weight="bold")
+    plt.title("Ballistic Transfer Trajectories", weight="bold")
     plt.xlabel("Departure Date", weight="bold")
     plt.ylabel("Arrival Date", weight="bold")
     fig.autofmt_xdate(rotation=45, ha="right")
@@ -224,12 +223,17 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
         Line2D([0], [0], color="white", lw=1),
         Line2D([0], [0], color="red", lw=1),
     ]
-    plt.legend(custom_lines, ["Departure C3", "Arrival C3"])
+
+    if plot_arrival:
+        plt.legend(custom_lines, ["Departure C3", "Arrival C3"])
+    else:
+        plt.legend(custom_lines[:1], ["Departure C3"])
     plt.tight_layout()
 
     plt.savefig("/Users/mihir/projects/porkchop/examples/porkchop_plot.png", dpi=300)
 
 
 if __name__ == "__main__":
-    plot(lw=0.5, levels=10, dep_max_C3=50, arr_max_C3=50, plot_arrival=True)
-    plot_tof_vs_DV(pmin=10, pmax=40)
+    levels = np.arange(4, 64, 5)
+    plot(lw=0.5, levels=levels, dep_max_C3=50, arr_max_C3=50, plot_arrival=True)
+    # plot_tof_vs_DV(pmin=10, pmax=40)
