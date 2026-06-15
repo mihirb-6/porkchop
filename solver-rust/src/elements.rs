@@ -165,3 +165,14 @@ pub fn find_periods(planet1: SolarSystem, planet2: SolarSystem) -> Period {
 
     syn_p
 }
+
+pub fn hohmann_transfer_time(planet1: SolarSystem, planet2: SolarSystem) -> f64 {
+    let time = Instant::now();
+
+    let (r1, v1) = satkit::jplephem::barycentric_state(planet1, &time).unwrap();
+    let (r2, v2) = satkit::jplephem::barycentric_state(planet2, &time).unwrap();
+    let a1 = get_elements(r1, v1).seminajor_axis();
+    let a2 = get_elements(r2, v2).seminajor_axis();
+
+    std::f64::consts::PI * (((a1 + a2) / 2.).powi(3) / MU_SUN).sqrt() / 86400.
+}
