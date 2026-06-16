@@ -95,7 +95,9 @@ def plot_tof_vs_DV(pmin, pmax):
     fig.savefig("/Users/mihir/projects/porkchop/docs/tof_vs_deltaV.png", dpi=300)
 
 
-def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
+def plot_contour(
+    lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False, tof_contour=False
+):
 
     # Departure C3 Type 1
     C3_dep_type1_cap = np.clip(C3_dep_type1, a_min=None, a_max=dep_max_C3)
@@ -116,10 +118,10 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
         y_type1_num,
         C3_dep_type1_cap,
         levels=levels,
-        colors="white",
+        cmap="jet",
         linewidths=lw,
     )
-    ax.clabel(type1_dep_lines, inline=True, fontsize=7, fmt="%.0f", colors="white")
+    ax.clabel(type1_dep_lines, inline=True, fontsize=5, fmt="%.0f", colors="white")
 
     # Type 2 Departure Energy Contour Lines
     type2_dep_lines = ax.tricontour(
@@ -127,10 +129,10 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
         y_type2_num,
         C3_dep_type2_cap,
         levels=levels,
-        colors="white",
+        cmap="jet",
         linewidths=lw,
     )
-    ax.clabel(type2_dep_lines, inline=True, fontsize=7, fmt="%.0f", colors="white")
+    ax.clabel(type2_dep_lines, inline=True, fontsize=5, fmt="%.0f", colors="white")
 
     if plot_arrival:
         # Type 1 Arrival Energy Contour Lines
@@ -143,7 +145,7 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
             linewidths=lw,
             alpha=0.5,
         )
-        ax.clabel(type1_arr_lines, inline=True, fontsize=7, fmt="%.0f", colors="red")
+        ax.clabel(type1_arr_lines, inline=True, fontsize=5, fmt="%.0f", colors="red")
 
         # Type 2 Arrival Energy Contour Lines
         type2_arr_lines = ax.tricontour(
@@ -155,50 +157,24 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
             linewidths=lw,
             alpha=0.5,
         )
-        ax.clabel(type2_arr_lines, inline=True, fontsize=7, fmt="%.0f", colors="red")
+        ax.clabel(type2_arr_lines, inline=True, fontsize=5, fmt="%.0f", colors="red")
 
-    """
-    # TOF Contours Lines
-    ax.set_xlim(x_type1_num.min(), x_type1_num.max())  # set limits
-    ax.set_ylim(y_type1_num.min(), y_type1_num.max())
-    x_right = ax.get_xlim()[1]  # right edge x value
-    y_bottom, y_top = ax.get_ylim()
-    for tof in np.arange(100, 600, 100):
-        y_line = x_type1_num + tof  # y = x + TOF (constant TOF diagonal)
-        ax.plot(x_type1_num, y_line, "g", lw=0.3)
-
-        # Find where the line intersects the right edge or top edge
-        y_at_right = x_right + tof  # y value when x = x_right
-
-        if y_bottom <= y_at_right <= y_top:
-            # Line exits through the right edge
+    if tof_contour:
+        # TOF Contours Lines
+        ax.set_xlim(x_type1_num.min(), x_type1_num.max())  # set limits
+        ax.set_ylim(y_type1_num.min(), y_type1_num.max())
+        for tof in np.arange(100, 600, 100):
+            y_line = x_type1_num + tof  # y = x + TOF (constant TOF diagonal)
+            ax.plot(x_type1_num, y_line, "white", lw=1, alpha=0.5)
             ax.annotate(
                 str(int(tof)),
-                xy=(x_right, y_at_right),
-                xytext=(5, 0),  # offset in points to the right
-                textcoords="offset points",
+                xy=(x_type1_num[-1] + 10, y_line[-1] + 10),
+                ha="center",
                 va="center",
-                ha="left",
+                annotation_clip=False,
+                color="white",
                 fontsize=10,
-                color="g",
-                annotation_clip=False,  # allow label outside axes
             )
-        else:
-            # Line exits through the top edge — find x at y_top
-            x_at_top = y_top - tof
-            if ax.get_xlim()[0] <= x_at_top <= x_right:
-                ax.annotate(
-                    str(int(tof)),
-                    xy=(x_at_top, y_top),
-                    xytext=(0, 5),
-                    textcoords="offset points",
-                    va="bottom",
-                    ha="center",
-                    fontsize=10,
-                    color="g",
-                    annotation_clip=False,
-                )
-    """
 
     # Axis Date Formatting
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
@@ -225,7 +201,10 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
     ]
 
     if plot_arrival:
-        plt.legend(custom_lines, ["Departure C3 [${km^2}/{s^2}$]", "Arrival C3 [${km^2}/{s^2}$]"])
+        plt.legend(
+            custom_lines,
+            ["Departure C3 [${km^2}/{s^2}$]", "Arrival C3 [${km^2}/{s^2}$]"],
+        )
     else:
         plt.legend(custom_lines[:1], [r"Departure C3 [${km^2}/{s^2}$]"])
     plt.tight_layout()
@@ -234,6 +213,10 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
 
 
 if __name__ == "__main__":
-    levels = np.arange(4, 64, 5)
-    plot(lw=0.5, levels=levels, dep_max_C3=2e6, arr_max_C3=500, plot_arrival=True)
+    levels = np.arange(3, 64, 4)
+    linewidth = 0.5
+    max_C3 = 64
+
+    plot_contour(linewidth, levels, max_C3, max_C3, tof_contour=True, plot_arrival=False)
+
     # plot_tof_vs_DV(pmin=10, pmax=40)
