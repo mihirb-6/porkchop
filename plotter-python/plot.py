@@ -45,7 +45,7 @@ delta_vs = np.array(
 )
 
 
-def plot_tof_vs_DV(pmin, pmax):
+def plot_tof_vs_DV(pmin: float, pmax: float):
     # Temporary array that will be filld in clipped values from all delta_vs
     temp = []
 
@@ -96,7 +96,14 @@ def plot_tof_vs_DV(pmin, pmax):
 
 
 def plot_contour(
-    lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False, tof_contour=False
+    lw: float,
+    dep_levels: np.ndarray,
+    arr_levels: np.ndarray,
+    dep_max_C3: float,
+    arr_max_C3: float,
+    plot_departure: bool = True,
+    plot_arrival: bool = False,
+    tof_contour: bool = False,
 ):
 
     # Departure C3 Type 1
@@ -112,27 +119,28 @@ def plot_contour(
     # Create fig + ax objects
     fig, ax = plt.subplots()
 
-    # Type 1 Departure Energy Contour Lines
-    type1_dep_lines = ax.tricontour(
-        x_type1_num,  # <-- original floats from Julian Date
-        y_type1_num,
-        C3_dep_type1_cap,
-        levels=levels,
-        cmap="jet",
-        linewidths=lw,
-    )
-    ax.clabel(type1_dep_lines, inline=True, fontsize=5, fmt="%.0f", colors="white")
+    if plot_departure:
+        # Type 1 Departure Energy Contour Lines
+        type1_dep_lines = ax.tricontour(
+            x_type1_num,  # <-- original floats from Julian Date
+            y_type1_num,
+            C3_dep_type1_cap,
+            levels=dep_levels,
+            cmap="gnuplot2_r",
+            linewidths=lw,
+        )
+        ax.clabel(type1_dep_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
 
-    # Type 2 Departure Energy Contour Lines
-    type2_dep_lines = ax.tricontour(
-        x_type2_num,
-        y_type2_num,
-        C3_dep_type2_cap,
-        levels=levels,
-        cmap="jet",
-        linewidths=lw,
-    )
-    ax.clabel(type2_dep_lines, inline=True, fontsize=5, fmt="%.0f", colors="white")
+        # Type 2 Departure Energy Contour Lines
+        type2_dep_lines = ax.tricontour(
+            x_type2_num,
+            y_type2_num,
+            C3_dep_type2_cap,
+            levels=dep_levels,
+            cmap="gnuplot2_r",
+            linewidths=lw,
+        )
+        ax.clabel(type2_dep_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
 
     if plot_arrival:
         # Type 1 Arrival Energy Contour Lines
@@ -140,24 +148,24 @@ def plot_contour(
             x_type1_num,
             y_type1_num,
             C3_arr_type1_cap,
-            levels=levels,
-            colors="red",
+            levels=arr_levels,
+            cmap="YlOrRd",
             linewidths=lw,
-            alpha=0.5,
+            alpha=0.99,
         )
-        ax.clabel(type1_arr_lines, inline=True, fontsize=5, fmt="%.0f", colors="red")
+        ax.clabel(type1_arr_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
 
         # Type 2 Arrival Energy Contour Lines
         type2_arr_lines = ax.tricontour(
             x_type1_num,
             y_type1_num,
             C3_arr_type2_cap,
-            levels=levels,
-            colors="red",
+            levels=arr_levels,
+            cmap="YlOrRd",
             linewidths=lw,
-            alpha=0.5,
+            alpha=0.99,
         )
-        ax.clabel(type2_arr_lines, inline=True, fontsize=5, fmt="%.0f", colors="red")
+        ax.clabel(type2_arr_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
 
     if tof_contour:
         # TOF Contours Lines
@@ -196,8 +204,8 @@ def plot_contour(
 
     # Custom legend format
     custom_lines = [
-        Line2D([0], [0], color="white", lw=1),
-        Line2D([0], [0], color="red", lw=1),
+        Line2D([0], [0], lw=1),
+        Line2D([0], [0], lw=1),
     ]
 
     if plot_arrival:
@@ -213,10 +221,19 @@ def plot_contour(
 
 
 if __name__ == "__main__":
-    levels = np.arange(3, 64, 4)
+    departure_levels = np.linspace(0, 100, 20)
+    arrival_levels = np.linspace(0, 100, 15)
     linewidth = 0.5
     max_C3 = 64
 
-    plot_contour(linewidth, levels, max_C3, max_C3, tof_contour=True, plot_arrival=False)
+    plot_contour(
+        linewidth,
+        departure_levels,
+        arrival_levels,
+        max_C3,
+        max_C3,
+        plot_departure=True,
+        plot_arrival=False,
+    )
 
     # plot_tof_vs_DV(pmin=10, pmax=40)
