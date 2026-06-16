@@ -149,9 +149,7 @@ pub fn get_elements(r_vector: numeris::Vector3<f64>, v_vector: numeris::Vector3<
 #[allow(unused)]
 //tau_s = 2pi / |w_p1 - w_p2| -> w is rotational rates about the sun
 // = 2pi / |1/p1_period - 1/p2_period|
-pub fn find_periods(planet1: SolarSystem, planet2: SolarSystem) -> Period {
-    let time = Instant::now();
-
+pub fn find_periods(planet1: SolarSystem, planet2: SolarSystem, time: Instant) -> Period {
     let (r1, v1) = satkit::jplephem::barycentric_state(planet1, &time).unwrap();
     let (r2, v2) = satkit::jplephem::barycentric_state(planet2, &time).unwrap();
     let t1 = get_elements(r1, v1).period();
@@ -166,9 +164,7 @@ pub fn find_periods(planet1: SolarSystem, planet2: SolarSystem) -> Period {
     syn_p
 }
 
-pub fn hohmann_transfer_time(planet1: SolarSystem, planet2: SolarSystem) -> f64 {
-    let time = Instant::now();
-
+pub fn hohmann_transfer_time(planet1: SolarSystem, planet2: SolarSystem, time: Instant) -> f64 {
     let (r1, v1) = satkit::jplephem::barycentric_state(planet1, &time).unwrap();
     let (r2, v2) = satkit::jplephem::barycentric_state(planet2, &time).unwrap();
     let a1 = get_elements(r1, v1).seminajor_axis();
