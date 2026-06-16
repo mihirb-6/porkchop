@@ -225,9 +225,9 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
     ]
 
     if plot_arrival:
-        plt.legend(custom_lines, ["Departure C3", "Arrival C3"])
+        plt.legend(custom_lines, ["Departure C3 [${km^2}/{s^2}$]", "Arrival C3 [${km^2}/{s^2}$]"])
     else:
-        plt.legend(custom_lines[:1], ["Departure C3"])
+        plt.legend(custom_lines[:1], [r"Departure C3 [${km^2}/{s^2}$]"])
     plt.tight_layout()
 
     plt.savefig("/Users/mihir/projects/porkchop/examples/porkchop_plot.png", dpi=300)
@@ -235,5 +235,5 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
 
 if __name__ == "__main__":
     levels = np.arange(4, 64, 5)
-    plot(lw=0.5, levels=levels, dep_max_C3=50, arr_max_C3=50, plot_arrival=True)
+    plot(lw=0.5, levels=levels, dep_max_C3=2e6, arr_max_C3=500, plot_arrival=True)
     # plot_tof_vs_DV(pmin=10, pmax=40)
