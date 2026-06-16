@@ -47,6 +47,7 @@ struct SearchBounds {
     dep_end: i32,
     tof_min: i32,
     tof_max: i32,
+    step_size: f64,
 }
 
 /* Find Trajectories
@@ -62,31 +63,31 @@ struct SearchBounds {
  *      Two Vectors of type: Vec<(Instant, Instant, f64, f64)>
  * */
 fn find_trajectories(
+    initial_time: Instant,
     departure_obj: satkit::SolarSystem,
     arrival_obj: satkit::SolarSystem,
-    min_departure_days: i32,
-    max_departure_days: i32,
-    shortest_arrival_tof: i32,
-    longest_arrival_tof: i32,
-    dep_step_size: f64,
+    search: SearchBounds,
 ) -> (
     Vec<(Instant, Instant, f64, f64)>,
     Vec<(Instant, Instant, f64, f64)>,
 ) {
+    println!("===========================================================");
     println!("Calculating trajectories...");
     // dep_date, arr_date, dep_c3, arr_c3,
     let mut type1_data: Vec<(Instant, Instant, f64, f64)> = Vec::new();
     let mut type2_data: Vec<(Instant, Instant, f64, f64)> = Vec::new();
 
-    let now = satkit::Instant::now();
-
     for dep_day in StepRange(
-        min_departure_days as f64,
-        max_departure_days as f64,
-        dep_step_size,
+        search.dep_start as f64,
+        search.dep_end as f64,
+        search.step_size,
     ) {
-        for tof in StepRange(shortest_arrival_tof as f64, longest_arrival_tof as f64, 1.) {
-            let departure_date = now + satkit::Duration::from_days(dep_day as f64);
+        for tof in StepRange(
+            search.tof_min as f64,
+            search.tof_max as f64,
+            search.step_size,
+        ) {
+            let departure_date = initial_time + satkit::Duration::from_days(dep_day as f64);
             let arrival_date = departure_date + Duration::from_days(tof as f64);
 
             let (r1, v1) = barycentric_state(departure_obj, &departure_date).unwrap();
@@ -160,43 +161,62 @@ fn find_trajectories(
         type1_data.len(),
         type2_data.len()
     );
+    println!("===========================================================");
 
     (type1_data, type2_data)
 }
 
 fn main() {
+    // Define initial time
+    let initial_time = satkit::Instant::now();
+
     // Define Departure and Arrival Locations
     let departure_object = SolarSystem::EMB;
     let arrival_object = SolarSystem::Mars;
 
-    // Synodic Period
-    let syn_p = find_periods(departure_object, arrival_object).synodic_period;
+    println!("===========================================================");
     println!(
-        "Synodic Period of {} & {}: {:.2} days",
-        departure_object, arrival_object, syn_p
+        "Searching for trajectories from {} to {} after datetime: {}...",
+        departure_object,
+        arrival_object,
+        initial_time.strftime("%B-%d-%Y %H:%M:%S").unwrap()
     );
 
-    let hohmann_t = hohmann_transfer_time(departure_object, arrival_object);
+    // Synodic Period
+    let syn_p = find_periods(departure_object, arrival_object, initial_time).synodic_period;
+    println!("Synodic Period: {:.2} days...", syn_p);
+
+    let hohmann_t = hohmann_transfer_time(departure_object, arrival_object, initial_time);
+    println!("Hohmann Transfer Time: {:.2} days...", hohmann_t);
+
+    println!("===========================================================");
+
     let search = SearchBounds {
-        dep_start: (0.1 * syn_p) as i32,
-        dep_end: (0.3 * syn_p) as i32,
-        tof_min: (0.1 * hohmann_t) as i32,
-        tof_max: (2. * hohmann_t) as i32,
+        dep_start: (0.05 * syn_p) as i32,
+        dep_end: (0.25 * syn_p) as i32,
+        tof_min: (0.42 * hohmann_t) as i32,
+        tof_max: (2.2 * hohmann_t) as i32,
+        step_size: 1.0,
     };
 
-    println!("{}", search.dep_start);
+    let d_init = initial_time + satkit::Duration::from_days(search.dep_start as f64);
+    let d_end = initial_time + satkit::Duration::from_days(search.dep_end as f64);
+
+    println!(
+        "Departure range {} - {}",
+        d_init.strftime("%B-%d-%Y %H:%M:%S").unwrap(),
+        d_end.strftime("%B-%d-%Y %H:%M:%S").unwrap(),
+    );
+    println!(
+        "TOF range [{:.2} - {:.2}] days",
+        search.tof_min, search.tof_max
+    );
+    println!("===========================================================");
 
     // Calculate All Trajectories and Compute Delta-V
     // dep_obj, arr_obj, min_dep, max_dep, min_tof, max_tof, dep_step_size
-    let (type1_data, type2_data) = find_trajectories(
-        departure_object,
-        arrival_object,
-        search.dep_start,
-        search.dep_end,
-        search.tof_min,
-        search.tof_max,
-        1.,
-    );
+    let (type1_data, type2_data) =
+        find_trajectories(initial_time, departure_object, arrival_object, search);
 
     // Write data to separate csv's
     let type1_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv";
