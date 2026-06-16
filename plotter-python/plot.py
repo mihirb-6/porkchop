@@ -92,7 +92,7 @@ def plot_tof_vs_DV(pmin, pmax):
         bbox_to_anchor=(0.5, 0.05),
     )
     fig.tight_layout()
-    fig.savefig("/Users/mihir/projects/porkchop/examples/tof_vs_deltaV.png", dpi=300)
+    fig.savefig("/Users/mihir/projects/porkchop/docs/tof_vs_deltaV.png", dpi=300)
 
 
 def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
@@ -230,7 +230,7 @@ def plot(lw, levels, dep_max_C3, arr_max_C3, plot_arrival=False):
         plt.legend(custom_lines[:1], [r"Departure C3 [${km^2}/{s^2}$]"])
     plt.tight_layout()
 
-    plt.savefig("/Users/mihir/projects/porkchop/examples/porkchop_plot.png", dpi=300)
+    plt.savefig("/Users/mihir/projects/porkchop/docs/porkchop_plot.png", dpi=300)
 
 
 if __name__ == "__main__":
