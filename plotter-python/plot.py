@@ -126,7 +126,7 @@ def plot_contour(
             y_type1_num,
             C3_dep_type1_cap,
             levels=dep_levels,
-            cmap="gnuplot2_r",
+            cmap="Blues",
             linewidths=lw,
         )
         ax.clabel(type1_dep_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
@@ -137,7 +137,7 @@ def plot_contour(
             y_type2_num,
             C3_dep_type2_cap,
             levels=dep_levels,
-            cmap="gnuplot2_r",
+            cmap="Blues",
             linewidths=lw,
         )
         ax.clabel(type2_dep_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
@@ -149,7 +149,7 @@ def plot_contour(
             y_type1_num,
             C3_arr_type1_cap,
             levels=arr_levels,
-            cmap="YlOrRd",
+            cmap="Reds_r",
             linewidths=lw,
             alpha=0.99,
         )
@@ -161,7 +161,7 @@ def plot_contour(
             y_type1_num,
             C3_arr_type2_cap,
             levels=arr_levels,
-            cmap="YlOrRd",
+            cmap="Reds_r",
             linewidths=lw,
             alpha=0.99,
         )
@@ -204,8 +204,8 @@ def plot_contour(
 
     # Custom legend format
     custom_lines = [
-        Line2D([0], [0], lw=1),
-        Line2D([0], [0], lw=1),
+        Line2D([0], [0], color="#5aa5e8", lw=1),
+        Line2D([0], [0], color="#d9311e", lw=1),
     ]
 
     if plot_arrival:
