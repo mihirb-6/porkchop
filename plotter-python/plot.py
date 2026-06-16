@@ -234,6 +234,7 @@ if __name__ == "__main__":
         max_C3,
         plot_departure=True,
         plot_arrival=False,
+        tof_contour=True,
     )
 
     # plot_tof_vs_DV(pmin=10, pmax=40)
