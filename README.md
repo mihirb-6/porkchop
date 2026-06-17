@@ -22,7 +22,7 @@ Source: Burke, Laura M. “Interplanetary Mission Design Handbook: Earth-to-Mars
   python -m venv .venv
   ```
 - Use `source .venv/bin/activate` to activate the venv
-- Install the required dependencies using `pip install requirements.txt`
+- Install the required dependencies using `pip install -r requirements.txt`
 
 ## Usage
 ```bash
