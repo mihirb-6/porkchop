@@ -1,22 +1,14 @@
 use csv::Writer;
-#[allow(unused)]
-use inquire::Select;
 use lambert_izzo::{LambertInput, RevolutionBudget, TransferWay, lambert};
 use satkit::consts::MU_SUN;
 use satkit::jplephem::barycentric_state;
-#[allow(unused)]
 use satkit::prelude::*;
 use satkit::{Duration, Instant};
-#[allow(unused)]
-use std::collections::HashMap;
-#[allow(unused)]
-use std::{error::Error, f64::consts::PI};
+use std::error::Error;
 
 mod elements;
 
-use crate::elements::hohmann_transfer_time;
-#[allow(unused)]
-use crate::elements::{find_periods, get_elements};
+use crate::elements::{find_periods, hohmann_transfer_time};
 
 //mod elements;
 
@@ -42,6 +34,7 @@ impl Iterator for StepRange {
     }
 }
 
+#[derive(Debug, Clone, Copy)]
 struct SearchBounds {
     dep_start: i32,
     dep_end: i32,
@@ -192,11 +185,11 @@ fn main() {
     println!("===========================================================");
 
     let search = SearchBounds {
-        dep_start: (0.05 * syn_p) as i32,
-        dep_end: (0.25 * syn_p) as i32,
-        tof_min: (0.42 * hohmann_t) as i32,
-        tof_max: (2.2 * hohmann_t) as i32,
-        step_size: 1.0,
+        dep_start: (0.1 * syn_p) as i32,
+        dep_end: (0.5 * syn_p) as i32,
+        tof_min: (0.1 * hohmann_t) as i32,
+        tof_max: (2.5 * hohmann_t) as i32,
+        step_size: 1.5,
     };
 
     let d_init = initial_time + satkit::Duration::from_days(search.dep_start as f64);
@@ -215,14 +208,30 @@ fn main() {
 
     // Calculate All Trajectories and Compute Delta-V
     // dep_obj, arr_obj, min_dep, max_dep, min_tof, max_tof, dep_step_size
-    let (type1_data, type2_data) =
+    let (mut type1_data, mut type2_data) =
         find_trajectories(initial_time, departure_object, arrival_object, search);
+
+    // Replace last two elements in data vector tuples with clipped values
+    let max_c3 = 100.0;
+    type1_data = type1_data
+        .iter()
+        .map(|(dep_date, arr_date, dep_c3, arr_c3)| (*dep_date, *arr_date, (*dep_c3).clamp(0.0, max_c3), (*arr_c3).clamp(0.0, max_c3)))
+        .collect();
+    type2_data = type2_data
+        .iter()
+        .map(|(dep_date, arr_date, dep_c3, arr_c3)| (*dep_date, *arr_date, (*dep_c3).clamp(0.0, max_c3), (*arr_c3).clamp(0.0, max_c3)))
+        .collect();
 
     // Write data to separate csv's
     let type1_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv";
     let type2_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEII_DATA.csv";
+    let meta_path = "/Users/mihir/projects/porkchop/plotter-python/METADATA.csv";
     write_to_csv(type1_path, &type1_data).unwrap();
     write_to_csv(type2_path, &type2_data).unwrap();
+
+    let mut metadata_vector: Vec<(Instant, SearchBounds, f64)> = Vec::new();
+    metadata_vector.push((initial_time, search.clone(), max_c3));
+    write_metadata_to_csv(meta_path, &metadata_vector).unwrap();
 }
 
 /* Helper Funcion to write trajectory data to a CSV */
@@ -253,7 +262,39 @@ fn write_to_csv(
     }
 
     wtr.flush()?;
-    println!("Wrote to CSV.");
+    println!("Wrote data to CSV.");
+    Ok(())
+}
+
+fn write_metadata_to_csv(
+    path: &'static str,
+    data: &Vec<(Instant, SearchBounds, f64)>,
+) -> Result<(), Box<dyn Error>> {
+    let mut wtr = Writer::from_path(path)?;
+
+    wtr.write_record(&[
+        "Initial Time",
+        "Min Departure [Days]",
+        "Max Departure [Days]",
+        "Min TOF [Days]",
+        "Max TOF [Days]",
+        "Max C3 [km^2/s^2]",
+    ])
+    .expect("Failed to write headers");
+
+    for (init_time, bounds, max_c3) in data {
+        wtr.write_record(&[
+            init_time.as_iso8601().to_string(),
+            bounds.dep_start.to_string(),
+            bounds.dep_end.to_string(),
+            bounds.tof_min.to_string(),
+            bounds.tof_max.to_string(),
+            max_c3.to_string(),
+        ])
+        .expect("Failed to write record")
+    }
+    wtr.flush()?;
+    println!("Wrote metadata to CSV.");
     Ok(())
 }
 

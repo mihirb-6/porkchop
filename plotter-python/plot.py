@@ -8,6 +8,11 @@ plt.style.use("dark_background")
 
 df_type1 = pd.read_csv("TYPEI_DATA.csv", header=0)
 df_type2 = pd.read_csv("TYPEII_DATA.csv", header=0)
+df_metadata = pd.read_csv("METADATA.csv", header=0)
+
+min_tof = df_metadata["Min TOF [Days]"][0]
+max_tof = df_metadata["Max TOF [Days]"][0]
+max_c3 = df_metadata["Max C3 [km^2/s^2]"][0]
 
 # x_type1,y_type1 => dtype = datetime64[ns] (numpy)
 x_type1 = pd.to_datetime(df_type1["Departure Date [JD]"], origin="julian", unit="D")
@@ -31,6 +36,7 @@ C3_dep_type1 = df_type1["Departure C3 [km^2/s^2]"]
 C3_arr_type1 = df_type1["Arrival C3 [km^2/s^2]"]
 C3_dep_type2 = df_type2["Departure C3 [km^2/s^2]"]
 C3_arr_type2 = df_type2["Arrival C3 [km^2/s^2]"]
+
 
 # Type I and II Departure and Arrival Delta-V [km/s]
 deltaV_dep_type1 = np.sqrt(C3_dep_type1)
@@ -99,23 +105,17 @@ def plot_contour(
     lw: float,
     dep_levels: np.ndarray,
     arr_levels: np.ndarray,
-    dep_max_C3: float,
-    arr_max_C3: float,
-    plot_departure: bool = True,
-    plot_arrival: bool = False,
-    tof_contour: bool = False,
+    plot_departure=True,
+    plot_arrival=False,
+    tof_contour=False,
 ):
 
-    # Departure C3 Type 1
-    C3_dep_type1_cap = np.clip(C3_dep_type1, a_min=None, a_max=dep_max_C3)
-    # Departure C3 Type 2
-    C3_dep_type2_cap = np.clip(C3_dep_type2, a_min=None, a_max=dep_max_C3)
-
-    # Arrival C3 Type 1
-    C3_arr_type1_cap = np.clip(C3_arr_type1, a_min=None, a_max=arr_max_C3)
-    # Arrival C3 Type 2
-    C3_arr_type2_cap = np.clip(C3_arr_type2, a_min=None, a_max=arr_max_C3)
-
+    '''
+    C3_dep_type1_clip = np.clip(a=C3_dep_type1, a_min=0, a_max=max_c3)
+    C3_arr_type1_clip = np.clip(a=C3_arr_type1, a_min=0, a_max=max_c3)
+    C3_dep_type2_clip = np.clip(a=C3_dep_type2, a_min=0, a_max=max_c3)
+    C3_arr_type2_clip = np.clip(a=C3_arr_type2, a_min=0, a_max=max_c3)
+    '''
     # Create fig + ax objects
     fig, ax = plt.subplots()
 
@@ -124,7 +124,7 @@ def plot_contour(
         type1_dep_lines = ax.tricontour(
             x_type1_num,  # <-- original floats from Julian Date
             y_type1_num,
-            C3_dep_type1_cap,
+            C3_dep_type1,
             levels=dep_levels,
             cmap="Blues",
             linewidths=lw,
@@ -135,7 +135,7 @@ def plot_contour(
         type2_dep_lines = ax.tricontour(
             x_type2_num,
             y_type2_num,
-            C3_dep_type2_cap,
+            C3_dep_type2,
             levels=dep_levels,
             cmap="Blues",
             linewidths=lw,
@@ -147,31 +147,36 @@ def plot_contour(
         type1_arr_lines = ax.tricontour(
             x_type1_num,
             y_type1_num,
-            C3_arr_type1_cap,
+            C3_arr_type1,
             levels=arr_levels,
             cmap="Reds_r",
             linewidths=lw,
             alpha=0.99,
         )
-        ax.clabel(type1_arr_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
+        ax.clabel(
+            type1_arr_lines, inline=True, fontsize=4, fmt="%.0f", colors="#d9311e"
+        )
 
         # Type 2 Arrival Energy Contour Lines
         type2_arr_lines = ax.tricontour(
             x_type1_num,
             y_type1_num,
-            C3_arr_type2_cap,
+            C3_arr_type2,
             levels=arr_levels,
             cmap="Reds_r",
             linewidths=lw,
             alpha=0.99,
         )
-        ax.clabel(type2_arr_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
+        ax.clabel(
+            type2_arr_lines, inline=True, fontsize=4, fmt="%.0f", colors="#d9311e"
+        )
 
     if tof_contour:
         # TOF Contours Lines
-        ax.set_xlim(x_type1_num.min(), x_type1_num.max())  # set limits
-        ax.set_ylim(y_type1_num.min(), y_type1_num.max())
-        for tof in np.arange(100, 600, 100):
+        ax.set_xlim(x_type2_num.min(), x_type2_num.max())  # set limits
+        ax.set_ylim(y_type2_num.min(), y_type2_num.max())
+
+        for tof in np.linspace(min_tof, max_tof, 5):
             y_line = x_type1_num + tof  # y = x + TOF (constant TOF diagonal)
             ax.plot(x_type1_num, y_line, "white", lw=1, alpha=0.5)
             ax.annotate(
@@ -202,39 +207,44 @@ def plot_contour(
     fig.autofmt_xdate(rotation=45, ha="right")
     plt.grid(True, linestyle="dotted", alpha=0.3)
 
-    # Custom legend format
-    custom_lines = [
-        Line2D([0], [0], color="#5aa5e8", lw=1),
-        Line2D([0], [0], color="#d9311e", lw=1),
+    lines = [
+        Line2D([0], [0], color="#d9311e", lw=1),  # arrival
+        Line2D([0], [0], color="#5aa5e8", lw=1),  # departure
     ]
 
-    if plot_arrival:
+    if plot_departure and not plot_arrival:
         plt.legend(
-            custom_lines,
-            ["Departure C3 [${km^2}/{s^2}$]", "Arrival C3 [${km^2}/{s^2}$]"],
+            lines[1:],
+            ["Departure C3 [${km^2}/{s^2}$]"],
+        )
+    elif plot_arrival and not plot_departure:
+        plt.legend(
+            lines[:1],
+            ["Arrival C3 [${km^2}/{s^2}$]"],
         )
     else:
-        plt.legend(custom_lines[:1], [r"Departure C3 [${km^2}/{s^2}$]"])
+        plt.legend(
+            lines,
+            ["Arrival C3 [${km^2}/{s^2}$]", "Departure C3 [${km^2}/{s^2}$]"],
+        )
+
     plt.tight_layout()
 
     plt.savefig("/Users/mihir/projects/porkchop/docs/porkchop_plot.png", dpi=300)
 
 
-if __name__ == "__main__":
-    departure_levels = np.linspace(0, 100, 20)
-    arrival_levels = np.linspace(0, 100, 15)
-    linewidth = 0.5
-    max_C3 = 64
+departure_levels = np.linspace(0, max_c3, 20)
+arrival_levels = np.linspace(0, max_c3, 15)
+linewidth = 0.5
 
+if __name__ == "__main__":
     plot_contour(
         linewidth,
         departure_levels,
         arrival_levels,
-        max_C3,
-        max_C3,
+        tof_contour=True,
         plot_departure=True,
         plot_arrival=False,
-        tof_contour=True,
     )
 
     # plot_tof_vs_DV(pmin=10, pmax=40)
