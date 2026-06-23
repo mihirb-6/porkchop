@@ -44,6 +44,10 @@ deltaV_arr_type1 = np.sqrt(C3_arr_type1)
 deltaV_dep_type2 = np.sqrt(C3_dep_type2)
 deltaV_arr_type2 = np.sqrt(C3_arr_type2)
 
+# Type I and II Departure Launch Asymptotes
+dla_type1 = df_type1["Departure Launch Asymptote [deg]"]
+dla_type2 = df_type2["Departure Launch Asymptote [deg]"]
+
 tofs = np.array([tof_type1, tof_type1, tof_type2, tof_type2])
 
 delta_vs = np.array(
@@ -108,17 +112,17 @@ def plot_contour(
     plot_departure=True,
     plot_arrival=False,
     tof_contour=False,
+    dla=False,
+    x_cut=0,
+    y_cut=0,
 ):
 
-    '''
-    C3_dep_type1_clip = np.clip(a=C3_dep_type1, a_min=0, a_max=max_c3)
-    C3_arr_type1_clip = np.clip(a=C3_arr_type1, a_min=0, a_max=max_c3)
-    C3_dep_type2_clip = np.clip(a=C3_dep_type2, a_min=0, a_max=max_c3)
-    C3_arr_type2_clip = np.clip(a=C3_arr_type2, a_min=0, a_max=max_c3)
-    '''
-    # Create fig + ax objects
-    fig, ax = plt.subplots()
+    c_fontsize = 7
 
+    # Create fig + ax objects
+    fig, ax = plt.subplots(figsize=(8, 10))
+
+    # Departure C3 Energies (I & II)
     if plot_departure:
         # Type 1 Departure Energy Contour Lines
         type1_dep_lines = ax.tricontour(
@@ -129,7 +133,13 @@ def plot_contour(
             cmap="Blues",
             linewidths=lw,
         )
-        ax.clabel(type1_dep_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
+        ax.clabel(
+            type1_dep_lines,
+            inline=True,
+            fontsize=c_fontsize,
+            fmt="%.0f",
+            colors="white",
+        )
 
         # Type 2 Departure Energy Contour Lines
         type2_dep_lines = ax.tricontour(
@@ -140,8 +150,15 @@ def plot_contour(
             cmap="Blues",
             linewidths=lw,
         )
-        ax.clabel(type2_dep_lines, inline=True, fontsize=4, fmt="%.0f", colors="white")
+        ax.clabel(
+            type2_dep_lines,
+            inline=True,
+            fontsize=c_fontsize,
+            fmt="%.0f",
+            colors="white",
+        )
 
+    # Arrical C3 Energies (I & II)
     if plot_arrival:
         # Type 1 Arrival Energy Contour Lines
         type1_arr_lines = ax.tricontour(
@@ -154,7 +171,11 @@ def plot_contour(
             alpha=0.99,
         )
         ax.clabel(
-            type1_arr_lines, inline=True, fontsize=4, fmt="%.0f", colors="#d9311e"
+            type1_arr_lines,
+            inline=True,
+            fontsize=c_fontsize,
+            fmt="%.0f",
+            colors="#d9311e",
         )
 
         # Type 2 Arrival Energy Contour Lines
@@ -168,14 +189,49 @@ def plot_contour(
             alpha=0.99,
         )
         ax.clabel(
-            type2_arr_lines, inline=True, fontsize=4, fmt="%.0f", colors="#d9311e"
+            type2_arr_lines,
+            inline=True,
+            fontsize=c_fontsize,
+            fmt="%.0f",
+            colors="#d9311e",
         )
 
-    if tof_contour:
-        # TOF Contours Lines
-        ax.set_xlim(x_type2_num.min(), x_type2_num.max())  # set limits
-        ax.set_ylim(y_type2_num.min(), y_type2_num.max())
+    # Delcination of Launch Asymptote
+    if dla:
+        levels = [-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50]
+        dla_t1_lines = ax.tricontour(
+            x_type1_num,
+            y_type1_num,
+            dla_type1,
+            levels=levels,
+            colors="#00ff04",
+            linewidths=0.3,
+        )
+        ax.clabel(
+            dla_t1_lines,
+            inline=True,
+            fontsize=c_fontsize,
+            fmt="%.0f",
+            colors="#00ff04",
+        )
+        dla_t2_lines = ax.tricontour(
+            x_type2_num,
+            y_type2_num,
+            dla_type2,
+            levels=levels,
+            colors="#00ff04",
+            linewidths=0.3,
+        )
+        ax.clabel(
+            dla_t2_lines,
+            inline=True,
+            fontsize=c_fontsize,
+            fmt="%.0f",
+            colors="#00ff04",
+        )
 
+    # TOF Contours Lines
+    if tof_contour:
         for tof in np.linspace(min_tof, max_tof, 5):
             y_line = x_type1_num + tof  # y = x + TOF (constant TOF diagonal)
             ax.plot(x_type1_num, y_line, "white", lw=1, alpha=0.5)
@@ -189,20 +245,35 @@ def plot_contour(
                 fontsize=10,
             )
 
+    """
+    Plotting historical trajectories
+    ax.scatter(
+        mdates.date2num(np.datetime64("2020-07-30")),
+        mdates.date2num(np.datetime64("2021-02-18")),
+        label="Perserverance",
+        c='r',
+        marker='x'
+    )
+    """
+
     # Axis Date Formatting
-    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=1))
+    ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
     ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b-%Y"))
 
-    ax.yaxis.set_major_locator(mdates.MonthLocator(interval=3))
+    ax.yaxis.set_major_locator(mdates.MonthLocator(interval=5))
     ax.yaxis.set_major_formatter(mdates.DateFormatter("%d-%b-%Y"))
 
     # Axis Label Formatting
     ax.tick_params(axis="x", rotation=45, labelsize=10)
     ax.tick_params(axis="y", labelsize=10)
 
+    # Axis Limits Formatting
+    ax.set_xlim(None, np.max(x_type1_num) - x_cut)
+    ax.set_ylim(None, np.max(y_type1_num) - y_cut)
+
     # Plot Formatting
     plt.title("Ballistic Transfer Trajectories", weight="bold")
-    plt.xlabel("Departure Date", weight="bold")
+    plt.xlabel("Launch Date", weight="bold")
     plt.ylabel("Arrival Date", weight="bold")
     fig.autofmt_xdate(rotation=45, ha="right")
     plt.grid(True, linestyle="dotted", alpha=0.3)
@@ -210,31 +281,66 @@ def plot_contour(
     lines = [
         Line2D([0], [0], color="#d9311e", lw=1),  # arrival
         Line2D([0], [0], color="#5aa5e8", lw=1),  # departure
+        Line2D([0], [0], color="#00ff04", lw=1),  # dla
     ]
 
-    if plot_departure and not plot_arrival:
-        plt.legend(
-            lines[1:],
-            ["Departure C3 [${km^2}/{s^2}$]"],
-        )
-    elif plot_arrival and not plot_departure:
-        plt.legend(
-            lines[:1],
-            ["Arrival C3 [${km^2}/{s^2}$]"],
-        )
-    else:
-        plt.legend(
-            lines,
-            ["Arrival C3 [${km^2}/{s^2}$]", "Departure C3 [${km^2}/{s^2}$]"],
-        )
+    match (plot_departure, plot_arrival, dla):
+        case (True, True, False):  # arrival + departure
+            plt.legend(
+                lines,
+                ["Arrival C3 [${km^2}/{s^2}$]", "Departure C3 [${km^2}/{s^2}$]"],
+            )
+        case (True, False, False):  # departure only
+            plt.legend(
+                lines[1:],
+                ["Departure C3 [${km^2}/{s^2}$]"],
+            )
+        case (False, True, False):  # arrival only
+            plt.legend(
+                lines[:1],
+                ["Arrival C3 [${km^2}/{s^2}$]"],
+            )
+        case (False, False, True):  # dla
+            plt.legend(
+                lines[:2],
+                ["Declination of Launch Asymptote [deg]"],
+            )
+        case (True, True, True):  # arrival + departure + dla
+            plt.legend(
+                lines,
+                [
+                    "Arrival C3 [${km^2}/{s^2}$]",
+                    "Departure C3 [${km^2}/{s^2}$]",
+                    "Declination of Launch Asymptote [deg]",
+                ],
+            )
+        case (True, False, True):  # departure only + dla
+            plt.legend(
+                lines[1:],
+                [
+                    "Departure C3 [${km^2}/{s^2}$]",
+                    "Declination of Launch Asymptote [deg]",
+                ],
+            )
+        case (False, True, True):  # arrival only + dla
+            plt.legend(
+                lines[::2],
+                [
+                    "Arrival C3 [${km^2}/{s^2}$]",
+                    "Declination of Launch Asymptote [deg]",
+                ],
+            )
+        case (False, False, False):  #  none
+            pass
 
     plt.tight_layout()
 
     plt.savefig("/Users/mihir/projects/porkchop/docs/porkchop_plot.png", dpi=300)
+    # plt.show()
 
 
-departure_levels = np.linspace(0, max_c3, 20)
-arrival_levels = np.linspace(0, max_c3, 15)
+departure_levels = np.linspace(0, max_c3, 15)
+arrival_levels = np.linspace(0, max_c3, 12)
 linewidth = 0.5
 
 if __name__ == "__main__":
@@ -242,9 +348,12 @@ if __name__ == "__main__":
         linewidth,
         departure_levels,
         arrival_levels,
-        tof_contour=True,
+        tof_contour=False,
         plot_departure=True,
         plot_arrival=False,
+        dla=False,
+        x_cut=100,
+        y_cut=150,
     )
 
     # plot_tof_vs_DV(pmin=10, pmax=40)

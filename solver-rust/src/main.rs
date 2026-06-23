@@ -1,171 +1,32 @@
 use csv::Writer;
-use lambert_izzo::{LambertInput, RevolutionBudget, TransferWay, lambert};
-use satkit::consts::MU_SUN;
-use satkit::jplephem::barycentric_state;
+use satkit::Instant;
 use satkit::prelude::*;
-use satkit::{Duration, Instant};
 use std::error::Error;
 
 mod elements;
+mod trajectory;
 
 use crate::elements::{find_periods, hohmann_transfer_time};
+use crate::trajectory::{SearchBounds, find_trajectories};
 
 //mod elements;
 
-// (start, stop, step size)
-struct StepRange(f64, f64, f64);
-
-impl Iterator for StepRange {
-    type Item = f64;
-
-    #[inline]
-    fn next(&mut self) -> Option<f64> {
-        // self.0 = starting value
-        // self.1 = ending value
-        // self.2 = step size value
-
-        if self.0 < self.1 {
-            let v = self.0;
-            self.0 = v + self.2;
-            Some(v)
-        } else {
-            None
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy)]
-struct SearchBounds {
-    dep_start: i32,
-    dep_end: i32,
-    tof_min: i32,
-    tof_max: i32,
-    step_size: f64,
-}
-
-/* Find Trajectories
- * Inputs:
- *      departure_obj
- *      arrival_obj
- *      min_departure_days
- *      max_departure_days
- *      shortest_arrival_tof
- *      longest_arrival_tof
- *      dep_step_size
- * Outputs:
- *      Two Vectors of type: Vec<(Instant, Instant, f64, f64)>
- * */
-fn find_trajectories(
-    initial_time: Instant,
-    departure_obj: satkit::SolarSystem,
-    arrival_obj: satkit::SolarSystem,
-    search: SearchBounds,
-) -> (
-    Vec<(Instant, Instant, f64, f64)>,
-    Vec<(Instant, Instant, f64, f64)>,
-) {
-    println!("===========================================================");
-    println!("Calculating trajectories...");
-    // dep_date, arr_date, dep_c3, arr_c3,
-    let mut type1_data: Vec<(Instant, Instant, f64, f64)> = Vec::new();
-    let mut type2_data: Vec<(Instant, Instant, f64, f64)> = Vec::new();
-
-    for dep_day in StepRange(
-        search.dep_start as f64,
-        search.dep_end as f64,
-        search.step_size,
-    ) {
-        for tof in StepRange(
-            search.tof_min as f64,
-            search.tof_max as f64,
-            search.step_size,
-        ) {
-            let departure_date = initial_time + satkit::Duration::from_days(dep_day as f64);
-            let arrival_date = departure_date + Duration::from_days(tof as f64);
-
-            let (r1, v1) = barycentric_state(departure_obj, &departure_date).unwrap();
-            let (r2, v2) = barycentric_state(arrival_obj, &arrival_date).unwrap();
-
-            let r1: [f64; 3] = [r1[0] / 1e3, r1[1] / 1e3, r1[2] / 1e3];
-            let r2: [f64; 3] = [r2[0] / 1e3, r2[1] / 1e3, r2[2] / 1e3];
-            let v1: [f64; 3] = [v1[0] / 1e3, v1[1] / 1e3, v1[2] / 1e3];
-            let v2: [f64; 3] = [v2[0] / 1e3, v2[1] / 1e3, v2[2] / 1e3];
-
-            let tof_s = tof as f64 * 86400.;
-
-            let short_input = LambertInput {
-                r1: r1,
-                r2: r2,
-                tof: tof_s,
-                mu: MU_SUN / 1e9,
-                way: TransferWay::Short,
-                revolutions: RevolutionBudget::SingleOnly,
-            };
-            let long_input = LambertInput {
-                r1: r1,
-                r2: r2,
-                tof: tof_s,
-                mu: MU_SUN / 1e9,
-                way: TransferWay::Long,
-                revolutions: RevolutionBudget::SingleOnly,
-            };
-            let short = lambert(&short_input).unwrap();
-            let long = lambert(&long_input).unwrap();
-
-            let v1_short = short.single.v1;
-            let v2_short = short.single.v2;
-
-            let v1_long = long.single.v1;
-            let v2_long = long.single.v2;
-
-            // DEPARTURE EXCESS VELOCITIES
-            let dep_vinf_type1: [f64; 3] = [
-                v1_short[0] - v1[0],
-                v1_short[1] - v1[1],
-                v1_short[2] - v1[2],
-            ];
-            let dep_vinf_type2: [f64; 3] =
-                [v1_long[0] - v1[0], v1_long[1] - v1[1], v1_long[2] - v1[2]];
-
-            // ARRIVAL EXCESS VELOCITIES
-            let arr_vinf_type1: [f64; 3] = [
-                v2_short[0] - v2[0],
-                v2_short[1] - v2[1],
-                v2_short[2] - v2[2],
-            ];
-            let arr_vinf_type2: [f64; 3] =
-                [v2_long[0] - v2[0], v2_long[1] - v2[1], v2_long[2] - v2[2]];
-
-            // DEPARTURE C3 ENERGIES
-            let dep_c3_type1 = magnitude(&dep_vinf_type1).powi(2);
-            let dep_c3_type2 = magnitude(&dep_vinf_type2).powi(2);
-
-            // ARRIVAL C3 ENERGIES
-            let arr_c3_type1 = magnitude(&arr_vinf_type1).powi(2);
-            let arr_c3_type2 = magnitude(&arr_vinf_type2).powi(2);
-
-            type1_data.push((departure_date, arrival_date, dep_c3_type1, arr_c3_type1));
-            type2_data.push((departure_date, arrival_date, dep_c3_type2, arr_c3_type2));
-        }
-    }
-
-    println!(
-        "Found {} Type 1 and {} Type 2 Trajectories",
-        type1_data.len(),
-        type2_data.len()
-    );
-    println!("===========================================================");
-
-    (type1_data, type2_data)
-}
-
 fn main() {
-    // Define initial time
-    let initial_time = satkit::Instant::now();
+    // Define initial time,
+    // use Instant::from_date(YYYY, MM, DD).unwrap(); to specify an exact date to generate grid from
+    // or Instant::now(); to generate grid from the system's clock
+    let initial_time = Instant::from_date(2020, 3, 7).unwrap();
 
     // Define Departure and Arrival Locations
     let departure_object = SolarSystem::EMB;
     let arrival_object = SolarSystem::Mars;
+
+    // Limit C3 values displayed on the plot
+    let max_c3 = 50.0;
+
+    // Limit dla
+    let min_dla = -10.0;
+    let max_dla = 45.0;
 
     println!("===========================================================");
     println!(
@@ -185,11 +46,11 @@ fn main() {
     println!("===========================================================");
 
     let search = SearchBounds {
-        dep_start: (0.1 * syn_p) as i32,
-        dep_end: (0.5 * syn_p) as i32,
-        tof_min: (0.1 * hohmann_t) as i32,
-        tof_max: (2.5 * hohmann_t) as i32,
-        step_size: 1.5,
+        dep_start: (0.0 * syn_p) as i32,
+        dep_end: (0.4 * syn_p) as i32,
+        tof_min: (0.3 * hohmann_t) as i32,
+        tof_max: (2.2 * hohmann_t) as i32,
+        step_size: 1.0,
     };
 
     let d_init = initial_time + satkit::Duration::from_days(search.dep_start as f64);
@@ -211,15 +72,31 @@ fn main() {
     let (mut type1_data, mut type2_data) =
         find_trajectories(initial_time, departure_object, arrival_object, search);
 
-    // Replace last two elements in data vector tuples with clipped values
-    let max_c3 = 100.0;
+    // Clip/clamp values to make contours easier to plot in python
     type1_data = type1_data
         .iter()
-        .map(|(dep_date, arr_date, dep_c3, arr_c3)| (*dep_date, *arr_date, (*dep_c3).clamp(0.0, max_c3), (*arr_c3).clamp(0.0, max_c3)))
+        .map(|(dep_date, arr_date, dep_c3, arr_c3, dla)| {
+            (
+                *dep_date,
+                *arr_date,
+                (*dep_c3).clamp(0.0, max_c3),
+                (*arr_c3).clamp(0.0, max_c3),
+                (*dla).clamp(min_dla, max_dla),
+            )
+        })
         .collect();
+    
     type2_data = type2_data
         .iter()
-        .map(|(dep_date, arr_date, dep_c3, arr_c3)| (*dep_date, *arr_date, (*dep_c3).clamp(0.0, max_c3), (*arr_c3).clamp(0.0, max_c3)))
+        .map(|(dep_date, arr_date, dep_c3, arr_c3, dla)| {
+            (
+                *dep_date,
+                *arr_date,
+                (*dep_c3).clamp(0.0, max_c3),
+                (*arr_c3).clamp(0.0, max_c3),
+                (*dla).clamp(min_dla, max_dla),
+            )
+        })
         .collect();
 
     // Write data to separate csv's
@@ -237,7 +114,7 @@ fn main() {
 /* Helper Funcion to write trajectory data to a CSV */
 fn write_to_csv(
     path: &'static str,
-    data: &Vec<(Instant, Instant, f64, f64)>,
+    data: &Vec<(Instant, Instant, f64, f64, f64)>,
 ) -> Result<(), Box<dyn Error>> {
     println!("Writing {}...", path);
 
@@ -248,15 +125,17 @@ fn write_to_csv(
         "Arrival Date [JD]",
         "Departure C3 [km^2/s^2]",
         "Arrival C3 [km^2/s^2]",
+        "Departure Launch Asymptote [deg]",
     ])
     .expect("Failed to write headers");
 
-    for (dep_date, arr_date, dep_c3, arr_c3) in data {
+    for (dep_date, arr_date, dep_c3, arr_c3, dla) in data {
         wtr.write_record(&[
             dep_date.as_jd_with_scale(TimeScale::UTC).to_string(),
             arr_date.as_jd_with_scale(TimeScale::UTC).to_string(),
             dep_c3.to_string(),
             arr_c3.to_string(),
+            dla.to_string(),
         ])
         .expect("Failed to write record")
     }
@@ -296,11 +175,6 @@ fn write_metadata_to_csv(
     wtr.flush()?;
     println!("Wrote metadata to CSV.");
     Ok(())
-}
-
-/* Simple Magnitude Calculation */
-fn magnitude(matrix: &[f64; 3]) -> f64 {
-    (matrix[0].powi(2) + matrix[1].powi(2) + matrix[2].powi(2)).sqrt()
 }
 
 /*
