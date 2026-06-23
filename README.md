@@ -14,11 +14,11 @@ The plots below compare Porkchop's output against the reference contour plot fro
 
 ## Example: 2003 Mars *Opportunity* Rover Transfer
 
-<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/opportunity_porkchop_plot.png" alt="Porkchop output" width="40%"/>
+<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/opportunity_porkchop_plot.png" alt="Porkchop output" width="40%" height="50%"/>
 
 ## Example: 2020 Mars *Perseverance* Rover Transfer
 
-<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/perseverance_porkchop_plot.png" alt="Porkchop output" width="40%"/>
+<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/perseverance_porkchop_plot.png" alt="Porkchop output" width="40%" height="50%"/>
 
 ---
 ## How It Works
