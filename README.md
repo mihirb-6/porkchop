@@ -1,4 +1,4 @@
-# Porkchop — Visualize Interplanetary Trajectory Constraints
+# porkchop: Visualize Interplanetary Trajectory Constraints
 
 A porkchop plot generator for interplanetary mission design. The compute-heavy Lambert solver is written in Rust for speed, with Python handling visualization. Given a range of departure and arrival dates, it solves Lambert's problem across a grid of transfer trajectories and visualizes the results as a contour plot of C3 (characteristic energy).
 
