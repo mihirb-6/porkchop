@@ -12,13 +12,9 @@ The plots below compare Porkchop's output against the reference contour plot fro
 
 > Burke, L. M. *Interplanetary Mission Design Handbook: Earth-to-Mars Mission Opportunities 2026 to 2045.* NASA Technical Reports Server, [ntrs.nasa.gov/citations/20100037210](https://ntrs.nasa.gov/citations/20100037210).
 
-## Example: 2003 Mars *Opportunity* Rover Transfer
+## Example: 2003 Mars *Opportunity* Rover & 2020 Mars *Perseverance* Rover Transfer
 
-<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/opportunity_porkchop_plot.png" alt="Porkchop output" width="40%" height="50%"/>
-
-## Example: 2020 Mars *Perseverance* Rover Transfer
-
-<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/perseverance_porkchop_plot.png" alt="Porkchop output" width="40%" height="50%"/>
+<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/opportunity_porkchop_plot.png" alt="Porkchop output" width="50%" height="50%"/><img src="https://github.com/mihirb-6/porkchop/blob/main/docs/perseverance_porkchop_plot.png" alt="Porkchop output" width="50%" height="50%"/>
 
 ---
 ## How It Works
