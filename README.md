@@ -15,7 +15,7 @@ The plots below compare Porkchop's output against the reference contour plot fro
 ## Example: 2003 Mars *Opportunity* Rover & 2020 Mars *Perseverance* Rover Transfer
 
 <img src="https://github.com/mihirb-6/porkchop/blob/main/docs/opportunity_porkchop_plot.png" alt="Porkchop output" width="50%" height="50%"/><img src="https://github.com/mihirb-6/porkchop/blob/main/docs/perseverance_porkchop_plot.png" alt="Porkchop output" width="50%" height="50%"/>
-> The green contours re the spacecraft's outbound launch asymptote declination, another constraint used in preliminary trajectory design.
+> The green contours represent the spacecraft's outbound launch asymptote declination, another constraint used in preliminary trajectory design.
 ---
 ## How It Works
 
