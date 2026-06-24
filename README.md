@@ -8,7 +8,7 @@ A porkchop plot generator for interplanetary mission design. Given a range of de
 
 The plots below compare Porkchop's output against the reference contour plot from Burke et al. (2010) for the same transfer opportunity — a strong validation of the solver's accuracy.
 
-<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/porkchop_plot.png" alt="Porkchop output" width="60%"/><img src="https://github.com/mihirb-6/porkchop/blob/main/docs/Burke-et-al-comparison.png" alt="Burke et al. 2010 reference" width="40%"/>
+<img src="https://github.com/mihirb-6/porkchop/blob/main/docs/porkchop_plot.png" alt="Porkchop output" width="50%"/><img src="https://github.com/mihirb-6/porkchop/blob/main/docs/Burke-et-al-comparison.png" alt="Burke et al. 2010 reference" width="50%"/>
 
 > Burke, L. M. *Interplanetary Mission Design Handbook: Earth-to-Mars Mission Opportunities 2026 to 2045.* NASA Technical Reports Server, [ntrs.nasa.gov/citations/20100037210](https://ntrs.nasa.gov/citations/20100037210).
 
