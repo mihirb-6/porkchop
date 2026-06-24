@@ -1,3 +1,5 @@
+use std::f64::consts::PI;
+
 use lambert_izzo::{LambertInput, RevolutionBudget, TransferWay, lambert};
 use satkit::consts::MU_SUN;
 use satkit::jplephem::barycentric_state;
@@ -53,14 +55,14 @@ pub fn find_trajectories(
     arrival_obj: satkit::SolarSystem,
     search: SearchBounds,
 ) -> (
-    Vec<(Instant, Instant, f64, f64, f64)>,
-    Vec<(Instant, Instant, f64, f64, f64)>,
+    Vec<(Instant, Instant, f64, f64, f64, f64)>,
+    Vec<(Instant, Instant, f64, f64, f64, f64)>,
 ) {
     println!("===========================================================");
     println!("Calculating trajectories...");
     // dep_date, arr_date, dep_c3, arr_c3,
-    let mut type1_data: Vec<(Instant, Instant, f64, f64, f64)> = Vec::new();
-    let mut type2_data: Vec<(Instant, Instant, f64, f64, f64)> = Vec::new();
+    let mut type1_data: Vec<(Instant, Instant, f64, f64, f64, f64)> = Vec::new();
+    let mut type2_data: Vec<(Instant, Instant, f64, f64, f64, f64)> = Vec::new();
 
     for dep_day in StepRange(
         search.dep_start as f64,
@@ -129,12 +131,22 @@ pub fn find_trajectories(
                 [v2_long[0] - v2[0], v2_long[1] - v2[1], v2_long[2] - v2[2]];
 
             // TYPE I DEPARTURE LAUNCH ASYMPTOTE
-            //let dep_vinf_t1_eq = ecliptic_to_equatorial(&dep_vinf_type1);
             let dla_t1 = ((dep_vinf_type1[2] / magnitude(&dep_vinf_type1)).asin()).to_degrees();
 
             //TYPE II DEPARTURE LAUNCH ASYMPTOTE
-            //let dep_vinf_t2_eq = ecliptic_to_equatorial(&dep_vinf_type2);
             let dla_t2 = ((dep_vinf_type2[2] / magnitude(&dep_vinf_type2)).asin()).to_degrees();
+
+            // TYPE I ARRIVAL LAUNCH ASYMPTOTE
+            let mut rla_t1 = (arr_vinf_type1[1].atan2(arr_vinf_type1[0])).to_degrees();
+            if rla_t1 < 0f64 {
+                rla_t1 += 360_f64;
+            }
+
+            // TYPE II ARRIVAL LAUNCH ASYMPTOTE
+            let mut rla_t2 = (arr_vinf_type2[1].atan2(arr_vinf_type2[0])).to_degrees();
+            if rla_t2 < 0f64 {
+                rla_t2 += 360_f64;
+            }
 
             // DEPARTURE C3 ENERGIES
             let dep_c3_type1 = magnitude(&dep_vinf_type1).powi(2);
@@ -150,6 +162,7 @@ pub fn find_trajectories(
                 dep_c3_type1,
                 arr_c3_type1,
                 dla_t1,
+                rla_t1,
             ));
             type2_data.push((
                 departure_date,
@@ -157,6 +170,7 @@ pub fn find_trajectories(
                 dep_c3_type2,
                 arr_c3_type2,
                 dla_t2,
+                rla_t2,
             ));
         }
     }
@@ -179,7 +193,7 @@ fn magnitude(matrix: &[f64; 3]) -> f64 {
 /* Ecliptic to Equatorial Coordinate Frame Transformation
 fn ecliptic_to_equatorial(ecliptic: &[f64; 3]) -> [f64; 3] {
     // earth's axial tilt = 23.44 deg
-    let tilt = 23.44_f64.to_radians();
+    let tilt = 23.44_f64.to_radians
     let m: [[f64; 3]; 3] = [
         [1., 0., 0.],
         [0., tilt.cos(), -(tilt.sin())],

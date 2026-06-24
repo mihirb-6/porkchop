@@ -48,6 +48,10 @@ deltaV_arr_type2 = np.sqrt(C3_arr_type2)
 dla_type1 = df_type1["Departure Launch Asymptote [deg]"]
 dla_type2 = df_type2["Departure Launch Asymptote [deg]"]
 
+# Type I and II Arrival Launch Asymptotes
+rla_type1 = df_type1["Arrival Launch Asymptote [deg]"]
+rla_type2 = df_type2["Arrival Launch Asymptote [deg]"]
+
 tofs = np.array([tof_type1, tof_type1, tof_type2, tof_type2])
 
 delta_vs = np.array(
@@ -106,21 +110,29 @@ def plot_tof_vs_DV(pmin: float, pmax: float):
 
 
 def plot_contour(
-    lw: float,
-    dep_levels: np.ndarray,
-    arr_levels: np.ndarray,
-    plot_departure=True,
-    plot_arrival=False,
-    tof_contour=False,
-    dla=False,
-    x_cut=0,
-    y_cut=0,
+    lw: float,  # linewidths
+    dep_levels: np.ndarray,  # show launch levels
+    arr_levels: np.ndarray,  # show arrival levels
+    plot_departure=True,  # show launch C3 plot
+    plot_arrival=False,  # show arrival C3 plot
+    tof_contour=False,  # show tof plot
+    dla=False,  # show declination of launch asymptote
+    rla=False,  # show right ascension of launch asymptote
+    x_cuts=(0, 0),  # x-axis limits, but it subtracts from default axis
+    y_cuts=(0, 0),  # same as x_cuts, but for y-axis
 ):
+    xmin_cut, xmax_cut = x_cuts
+    ymin_cut, ymax_cut = y_cuts
 
-    c_fontsize = 7
+    c_fontsize = 4
 
     # Create fig + ax objects
-    fig, ax = plt.subplots(figsize=(8, 10))
+    fig, ax = plt.subplots(figsize=(7, 7))
+
+    dep_lbl_1 = None
+    dep_lbl_2 = None
+    arr_lbl_1 = None
+    arr_lbl_2 = None
 
     # Departure C3 Energies (I & II)
     if plot_departure:
@@ -133,9 +145,9 @@ def plot_contour(
             cmap="Blues",
             linewidths=lw,
         )
-        ax.clabel(
+        dep_lbl_1 = ax.clabel(
             type1_dep_lines,
-            inline=True,
+            inline=False,
             fontsize=c_fontsize,
             fmt="%.0f",
             colors="white",
@@ -150,13 +162,19 @@ def plot_contour(
             cmap="Blues",
             linewidths=lw,
         )
-        ax.clabel(
+        dep_lbl_2 = ax.clabel(
             type2_dep_lines,
-            inline=True,
+            inline=False,
+            inline_spacing=0,
             fontsize=c_fontsize,
             fmt="%.0f",
             colors="white",
         )
+
+        for label in dep_lbl_1:
+            label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
+        for label in dep_lbl_2:
+            label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
 
     # Arrical C3 Energies (I & II)
     if plot_arrival:
@@ -170,9 +188,9 @@ def plot_contour(
             linewidths=lw,
             alpha=0.99,
         )
-        ax.clabel(
+        arr_lbl_1 = ax.clabel(
             type1_arr_lines,
-            inline=True,
+            inline=False,
             fontsize=c_fontsize,
             fmt="%.0f",
             colors="#d9311e",
@@ -188,17 +206,34 @@ def plot_contour(
             linewidths=lw,
             alpha=0.99,
         )
-        ax.clabel(
+        arr_lbl_2 = ax.clabel(
             type2_arr_lines,
-            inline=True,
+            inline=False,
             fontsize=c_fontsize,
             fmt="%.0f",
             colors="#d9311e",
         )
+        for label in arr_lbl_1:
+            label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
+        for label in arr_lbl_2:
+            label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
 
     # Delcination of Launch Asymptote
     if dla:
-        levels = [-50, -40, -30, -20, -10, 0, 10, 20, 30, 40, 50]
+        if dep_lbl_1 is not None:
+            for label in dep_lbl_1:
+                label.remove()
+        if dep_lbl_2 is not None:
+            for label in dep_lbl_2:
+                label.remove()
+        if arr_lbl_1 is not None:
+            for label in arr_lbl_1:
+                label.remove()
+        if arr_lbl_2 is not None:
+            for label in arr_lbl_2:
+                label.remove()
+
+        levels = np.linspace(-50, 50, 11)
         dla_t1_lines = ax.tricontour(
             x_type1_num,
             y_type1_num,
@@ -230,23 +265,79 @@ def plot_contour(
             colors="#00ff04",
         )
 
+    # Right Ascension of Launch
+    if rla:
+        if dep_lbl_1 is not None:
+            for label in dep_lbl_1:
+                label.remove()
+        if dep_lbl_2 is not None:
+            for label in dep_lbl_2:
+                label.remove()
+        if arr_lbl_1 is not None:
+            for label in arr_lbl_1:
+                label.remove()
+        if arr_lbl_2 is not None:
+            for label in arr_lbl_2:
+                label.remove()
+
+        levels = [140, 160, 180, 200, 220, 240]
+        rla_t1_lines = ax.tricontour(
+            x_type1_num,
+            y_type1_num,
+            rla_type1,
+            levels=levels,
+            colors="#fc6f0a",
+            linewidths=0.3,
+        )
+        ax.clabel(
+            rla_t1_lines,
+            inline=True,
+            fontsize=c_fontsize,
+            fmt="%.0f",
+            colors="#fc6f0a",
+        )
+        rla_t2_lines = ax.tricontour(
+            x_type2_num,
+            y_type2_num,
+            rla_type2,
+            levels=levels,
+            colors="#fc6f0a",
+            linewidths=0.3,
+        )
+        ax.clabel(
+            rla_t2_lines,
+            inline=True,
+            fontsize=c_fontsize,
+            fmt="%.0f",
+            colors="#fc6f0a",
+        )
+
     # TOF Contours Lines
     if tof_contour:
+        tof_lbl = None
+        min = np.min(x_type1_num) + xmin_cut
+        max = np.max(x_type1_num) - xmax_cut
+        annotations = []
         for tof in np.linspace(min_tof, max_tof, 5):
-            y_line = x_type1_num + tof  # y = x + TOF (constant TOF diagonal)
-            ax.plot(x_type1_num, y_line, "white", lw=1, alpha=0.5)
-            ax.annotate(
+            xs = np.linspace(min, max, 2)
+            y_lines = xs + tof  # y = x + TOF (constant TOF line)
+            ax.plot(xs, y_lines, "white", lw=1, alpha=0.5)
+            tof_lbl = ax.annotate(
                 str(int(tof)),
-                xy=(x_type1_num[-1] + 10, y_line[-1] + 10),
+                xy=(xs[0] + 15, y_lines[0]+30),
                 ha="center",
                 va="center",
-                annotation_clip=False,
+                annotation_clip=True,
                 color="white",
                 fontsize=10,
             )
+            annotations.append(tof_lbl)
+        if tof_lbl is not None:
+            for label in annotations:
+                label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0, alpha=0.2))
 
     """
-    Plotting historical trajectories
+    Mark a single transfer window
     ax.scatter(
         mdates.date2num(np.datetime64("2020-07-30")),
         mdates.date2num(np.datetime64("2021-02-18")),
@@ -258,24 +349,24 @@ def plot_contour(
 
     # Axis Date Formatting
     ax.xaxis.set_major_locator(mdates.MonthLocator(interval=2))
-    ax.xaxis.set_major_formatter(mdates.DateFormatter("%d-%b-%Y"))
+    ax.xaxis.set_major_formatter(mdates.DateFormatter("%m/%d/%Y"))
 
-    ax.yaxis.set_major_locator(mdates.MonthLocator(interval=5))
-    ax.yaxis.set_major_formatter(mdates.DateFormatter("%d-%b-%Y"))
+    ax.yaxis.set_major_locator(mdates.MonthLocator(interval=3))
+    ax.yaxis.set_major_formatter(mdates.DateFormatter("%m/%d/%Y"))
 
     # Axis Label Formatting
-    ax.tick_params(axis="x", rotation=45, labelsize=10)
-    ax.tick_params(axis="y", labelsize=10)
+    ax.tick_params(axis="x", labelsize=8)
+    ax.tick_params(axis="y", labelsize=8)
 
     # Axis Limits Formatting
-    ax.set_xlim(None, np.max(x_type1_num) - x_cut)
-    ax.set_ylim(None, np.max(y_type1_num) - y_cut)
+    ax.set_xlim(np.min(x_type1_num) + xmin_cut, np.max(x_type1_num) - xmax_cut)
+    ax.set_ylim(np.min(x_type1_num) + ymin_cut, np.max(y_type1_num) - ymax_cut)
 
     # Plot Formatting
-    plt.title("Ballistic Transfer Trajectories", weight="bold")
+    plt.title("2026 Earth-Mars Ballistic Transfer Trajectories", weight="bold")
     plt.xlabel("Launch Date", weight="bold")
     plt.ylabel("Arrival Date", weight="bold")
-    fig.autofmt_xdate(rotation=45, ha="right")
+    # fig.autofmt_xdate(rotation=15, ha="right")
     plt.grid(True, linestyle="dotted", alpha=0.3)
 
     lines = [
@@ -339,7 +430,7 @@ def plot_contour(
     # plt.show()
 
 
-departure_levels = np.linspace(0, max_c3, 15)
+departure_levels = np.linspace(0, max_c3, 18)
 arrival_levels = np.linspace(0, max_c3, 12)
 linewidth = 0.5
 
@@ -348,12 +439,13 @@ if __name__ == "__main__":
         linewidth,
         departure_levels,
         arrival_levels,
-        tof_contour=False,
+        tof_contour=True,
         plot_departure=True,
         plot_arrival=False,
         dla=False,
-        x_cut=100,
-        y_cut=150,
+        rla=False,
+        x_cuts=(0, 10),
+        y_cuts=(200, 50),
     )
 
     # plot_tof_vs_DV(pmin=10, pmax=40)

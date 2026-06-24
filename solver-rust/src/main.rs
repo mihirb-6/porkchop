@@ -15,18 +15,22 @@ fn main() {
     // Define initial time,
     // use Instant::from_date(YYYY, MM, DD).unwrap(); to specify an exact date to generate grid from
     // or Instant::now(); to generate grid from the system's clock
-    let initial_time = Instant::from_date(2020, 3, 7).unwrap();
+    let initial_time = Instant::from_date(2028, 1, 1).unwrap();
 
     // Define Departure and Arrival Locations
     let departure_object = SolarSystem::EMB;
     let arrival_object = SolarSystem::Mars;
 
     // Limit C3 values displayed on the plot
-    let max_c3 = 50.0;
+    let max_c3 = 64_f64;
 
     // Limit dla
-    let min_dla = -10.0;
-    let max_dla = 45.0;
+    let min_dla = -10_f64;
+    let max_dla = 40_f64;
+
+    // Limit rla
+    //let min_rla = -360_f64;
+    //let max_rla = 360_f64;
 
     println!("===========================================================");
     println!(
@@ -46,10 +50,10 @@ fn main() {
     println!("===========================================================");
 
     let search = SearchBounds {
-        dep_start: (0.0 * syn_p) as i32,
-        dep_end: (0.4 * syn_p) as i32,
+        dep_start: (0.3 * syn_p) as i32,
+        dep_end: (0.6 * syn_p) as i32,
         tof_min: (0.3 * hohmann_t) as i32,
-        tof_max: (2.2 * hohmann_t) as i32,
+        tof_max: (2. * hohmann_t) as i32,
         step_size: 1.0,
     };
 
@@ -75,26 +79,28 @@ fn main() {
     // Clip/clamp values to make contours easier to plot in python
     type1_data = type1_data
         .iter()
-        .map(|(dep_date, arr_date, dep_c3, arr_c3, dla)| {
+        .map(|(dep_date, arr_date, dep_c3, arr_c3, dla, rla)| {
             (
                 *dep_date,
                 *arr_date,
                 (*dep_c3).clamp(0.0, max_c3),
                 (*arr_c3).clamp(0.0, max_c3),
                 (*dla).clamp(min_dla, max_dla),
+                *rla,
             )
         })
         .collect();
-    
+
     type2_data = type2_data
         .iter()
-        .map(|(dep_date, arr_date, dep_c3, arr_c3, dla)| {
+        .map(|(dep_date, arr_date, dep_c3, arr_c3, dla, rla)| {
             (
                 *dep_date,
                 *arr_date,
                 (*dep_c3).clamp(0.0, max_c3),
                 (*arr_c3).clamp(0.0, max_c3),
                 (*dla).clamp(min_dla, max_dla),
+                *rla,
             )
         })
         .collect();
@@ -114,7 +120,7 @@ fn main() {
 /* Helper Funcion to write trajectory data to a CSV */
 fn write_to_csv(
     path: &'static str,
-    data: &Vec<(Instant, Instant, f64, f64, f64)>,
+    data: &Vec<(Instant, Instant, f64, f64, f64, f64)>,
 ) -> Result<(), Box<dyn Error>> {
     println!("Writing {}...", path);
 
@@ -126,16 +132,18 @@ fn write_to_csv(
         "Departure C3 [km^2/s^2]",
         "Arrival C3 [km^2/s^2]",
         "Departure Launch Asymptote [deg]",
+        "Arrival Launch Asymptote [deg]",
     ])
     .expect("Failed to write headers");
 
-    for (dep_date, arr_date, dep_c3, arr_c3, dla) in data {
+    for (dep_date, arr_date, dep_c3, arr_c3, dla, rla) in data {
         wtr.write_record(&[
             dep_date.as_jd_with_scale(TimeScale::UTC).to_string(),
             arr_date.as_jd_with_scale(TimeScale::UTC).to_string(),
             dep_c3.to_string(),
             arr_c3.to_string(),
             dla.to_string(),
+            rla.to_string(),
         ])
         .expect("Failed to write record")
     }
