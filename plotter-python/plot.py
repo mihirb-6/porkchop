@@ -2,6 +2,7 @@ import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tomllib
 from matplotlib.lines import Line2D
 
 plt.style.use("dark_background")
@@ -110,7 +111,6 @@ def plot_tof_vs_DV(pmin: float, pmax: float):
 
 
 def plot_contour(
-    lw: float,  # linewidths
     dep_levels: np.ndarray,  # show launch levels
     arr_levels: np.ndarray,  # show arrival levels
     plot_departure=True,  # show launch C3 plot
@@ -124,7 +124,8 @@ def plot_contour(
     xmin_cut, xmax_cut = x_cuts
     ymin_cut, ymax_cut = y_cuts
 
-    c_fontsize = 4
+    c_fontsize = 10
+    lws = 0.5
 
     # Create fig + ax objects
     fig, ax = plt.subplots(figsize=(7, 7))
@@ -143,7 +144,7 @@ def plot_contour(
             C3_dep_type1,
             levels=dep_levels,
             cmap="Blues",
-            linewidths=lw,
+            linewidths=lws,
         )
         dep_lbl_1 = ax.clabel(
             type1_dep_lines,
@@ -160,7 +161,7 @@ def plot_contour(
             C3_dep_type2,
             levels=dep_levels,
             cmap="Blues",
-            linewidths=lw,
+            linewidths=lws,
         )
         dep_lbl_2 = ax.clabel(
             type2_dep_lines,
@@ -173,8 +174,10 @@ def plot_contour(
 
         for label in dep_lbl_1:
             label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
+            label.set_rotation(0)
         for label in dep_lbl_2:
             label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
+            label.set_rotation(0)
 
     # Arrical C3 Energies (I & II)
     if plot_arrival:
@@ -185,7 +188,7 @@ def plot_contour(
             C3_arr_type1,
             levels=arr_levels,
             cmap="Reds_r",
-            linewidths=lw,
+            linewidths=lws,
             alpha=0.99,
         )
         arr_lbl_1 = ax.clabel(
@@ -203,7 +206,7 @@ def plot_contour(
             C3_arr_type2,
             levels=arr_levels,
             cmap="Reds_r",
-            linewidths=lw,
+            linewidths=lws,
             alpha=0.99,
         )
         arr_lbl_2 = ax.clabel(
@@ -215,8 +218,11 @@ def plot_contour(
         )
         for label in arr_lbl_1:
             label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
+            label.set_rotation(0)
+
         for label in arr_lbl_2:
             label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
+            label.set_rotation(0)
 
     # Delcination of Launch Asymptote
     if dla:
@@ -239,30 +245,30 @@ def plot_contour(
             y_type1_num,
             dla_type1,
             levels=levels,
-            colors="#00ff04",
-            linewidths=0.3,
+            colors="red",
+            linewidths=0.6,
         )
         ax.clabel(
             dla_t1_lines,
             inline=True,
-            fontsize=c_fontsize,
+            fontsize=10,
             fmt="%.0f",
-            colors="#00ff04",
+            colors="red",
         )
         dla_t2_lines = ax.tricontour(
             x_type2_num,
             y_type2_num,
             dla_type2,
             levels=levels,
-            colors="#00ff04",
-            linewidths=0.3,
+            colors="red",
+            linewidths=0.6,
         )
         ax.clabel(
             dla_t2_lines,
             inline=True,
-            fontsize=c_fontsize,
+            fontsize=10,
             fmt="%.0f",
-            colors="#00ff04",
+            colors="red",
         )
 
     # Right Ascension of Launch
@@ -292,7 +298,7 @@ def plot_contour(
         ax.clabel(
             rla_t1_lines,
             inline=True,
-            fontsize=c_fontsize,
+            fontsize=10,
             fmt="%.0f",
             colors="#fc6f0a",
         )
@@ -307,7 +313,7 @@ def plot_contour(
         ax.clabel(
             rla_t2_lines,
             inline=True,
-            fontsize=c_fontsize,
+            fontsize=10,
             fmt="%.0f",
             colors="#fc6f0a",
         )
@@ -324,7 +330,7 @@ def plot_contour(
             ax.plot(xs, y_lines, "white", lw=1, alpha=0.5)
             tof_lbl = ax.annotate(
                 str(int(tof)),
-                xy=(xs[0] + 15, y_lines[0]+30),
+                xy=(xs[0] + 15, y_lines[0] + 30),
                 ha="center",
                 va="center",
                 annotation_clip=True,
@@ -334,7 +340,9 @@ def plot_contour(
             annotations.append(tof_lbl)
         if tof_lbl is not None:
             for label in annotations:
-                label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0, alpha=0.2))
+                label.set_bbox(
+                    dict(facecolor="black", edgecolor="none", pad=0, alpha=0.9)
+                )
 
     """
     Mark a single transfer window
@@ -363,7 +371,7 @@ def plot_contour(
     ax.set_ylim(np.min(x_type1_num) + ymin_cut, np.max(y_type1_num) - ymax_cut)
 
     # Plot Formatting
-    plt.title("2026 Earth-Mars Ballistic Transfer Trajectories", weight="bold")
+    plt.title("Ballistic Transfer Trajectories", weight="bold")
     plt.xlabel("Launch Date", weight="bold")
     plt.ylabel("Arrival Date", weight="bold")
     # fig.autofmt_xdate(rotation=15, ha="right")
@@ -372,7 +380,7 @@ def plot_contour(
     lines = [
         Line2D([0], [0], color="#d9311e", lw=1),  # arrival
         Line2D([0], [0], color="#5aa5e8", lw=1),  # departure
-        Line2D([0], [0], color="#00ff04", lw=1),  # dla
+        Line2D([0], [0], color="red", lw=1),  # dla
     ]
 
     match (plot_departure, plot_arrival, dla):
@@ -432,20 +440,31 @@ def plot_contour(
 
 departure_levels = np.linspace(0, max_c3, 18)
 arrival_levels = np.linspace(0, max_c3, 12)
-linewidth = 0.5
+
 
 if __name__ == "__main__":
+    with open("/Users/mihir/projects/porkchop/config.toml", "rb") as f:
+        config = tomllib.load(f)
+    py_inputs = config["python_config"]
+
+    plot_departure = py_inputs["plot_departure_contours"]
+    plot_arrival = py_inputs["plot_arrival_contours"]
+    plot_tof_contours = py_inputs["plot_tof_contours"]
+    plot_dla = py_inputs["plot_dla"]
+    plot_rla = py_inputs["plot_rla"]
+    x_cuts = tuple(py_inputs["x_cuts"])
+    y_cuts = tuple(py_inputs["y_cuts"])
+
     plot_contour(
-        linewidth,
         departure_levels,
         arrival_levels,
-        tof_contour=True,
-        plot_departure=True,
-        plot_arrival=False,
-        dla=False,
-        rla=False,
-        x_cuts=(0, 10),
-        y_cuts=(200, 50),
+        tof_contour=plot_tof_contours,
+        plot_departure=plot_departure,
+        plot_arrival=plot_arrival,
+        dla=plot_dla,
+        rla=plot_rla,
+        x_cuts=x_cuts,
+        y_cuts=y_cuts,
     )
 
     # plot_tof_vs_DV(pmin=10, pmax=40)

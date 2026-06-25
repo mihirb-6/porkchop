@@ -1,0 +1,21 @@
+[rust_config]
+initial_time = [2027, 12, 1]
+departure_object = "earth"
+arrival_object = "mars"
+search_limits = [0.3, # start departure
+                0.7, #  end departure
+                0.2, #  min tof
+                2.0, # max tof
+                2.0] # step size
+max_c3 = 50.0
+dla_limits = [-10.0, 40.0]
+
+
+[python_config]
+plot_departure_contours = true
+plot_arrival_contours = false
+plot_tof_contours = true
+plot_dla=false
+plot_rla=false
+x_cuts=[0,30]
+y_cuts=[150,0]

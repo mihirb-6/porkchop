@@ -1,7 +1,10 @@
 use csv::Writer;
 use satkit::Instant;
 use satkit::prelude::*;
+use serde::Deserialize;
+use std::collections::HashMap;
 use std::error::Error;
+use std::fs;
 
 mod elements;
 mod trajectory;
@@ -9,24 +12,54 @@ mod trajectory;
 use crate::elements::{find_periods, hohmann_transfer_time};
 use crate::trajectory::{SearchBounds, find_trajectories};
 
-//mod elements;
+#[derive(Deserialize, Debug)]
+struct Config {
+    rust_config: RustConfig,
+}
+
+#[derive(Deserialize, Debug)]
+struct RustConfig {
+    initial_time: (i32, i32, i32),
+    departure_object: String,
+    arrival_object: String,
+    search_limits: (f64, f64, f64, f64, f64),
+    max_c3: f64,
+    dla_limits: (f64, f64),
+}
 
 fn main() {
-    // Define initial time,
-    // use Instant::from_date(YYYY, MM, DD).unwrap(); to specify an exact date to generate grid from
-    // or Instant::now(); to generate grid from the system's clock
-    let initial_time = Instant::from_date(2028, 1, 1).unwrap();
+    let file_content = fs::read_to_string("/Users/mihir/projects/porkchop/config.toml")
+        .expect("Failed to read config file");
+    let config: Config = toml::from_str(&file_content).expect("Failed to parse TOML");
+
+    let (yyyy, mm, dd) = config.rust_config.initial_time;
+
+    let dep_obj = config.rust_config.departure_object;
+    let arr_obj = config.rust_config.arrival_object;
+
+    // Define initial time
+    let initial_time = Instant::from_date(yyyy, mm, dd).unwrap();
+
+    let pl_hashmap: HashMap<String, SolarSystem> = HashMap::from([
+        (String::from("mercury"), SolarSystem::Mercury),
+        (String::from("venus"), SolarSystem::Venus),
+        (String::from("earth"), SolarSystem::EMB),
+        (String::from("mars"), SolarSystem::Mars),
+        (String::from("jupiter"), SolarSystem::Jupiter),
+        (String::from("saturn"), SolarSystem::Saturn),
+        (String::from("uranus"), SolarSystem::Uranus),
+        (String::from("neptune"), SolarSystem::Neptune),
+    ]);
 
     // Define Departure and Arrival Locations
-    let departure_object = SolarSystem::EMB;
-    let arrival_object = SolarSystem::Mars;
+    let departure_object = pl_hashmap[&dep_obj];
+    let arrival_object = pl_hashmap[&arr_obj];
 
     // Limit C3 values displayed on the plot
-    let max_c3 = 64_f64;
+    let max_c3 = config.rust_config.max_c3;
 
     // Limit dla
-    let min_dla = -10_f64;
-    let max_dla = 40_f64;
+    let (min_dla, max_dla) = config.rust_config.dla_limits;
 
     // Limit rla
     //let min_rla = -360_f64;
@@ -49,12 +82,14 @@ fn main() {
 
     println!("===========================================================");
 
+    let (start, end, min, max, step) = config.rust_config.search_limits;
+
     let search = SearchBounds {
-        dep_start: (0.3 * syn_p) as i32,
-        dep_end: (0.6 * syn_p) as i32,
-        tof_min: (0.3 * hohmann_t) as i32,
-        tof_max: (2. * hohmann_t) as i32,
-        step_size: 1.0,
+        dep_start: (start * syn_p) as i32,
+        dep_end: (end * syn_p) as i32,
+        tof_min: (min * hohmann_t) as i32,
+        tof_max: (max * hohmann_t) as i32,
+        step_size: step,
     };
 
     let d_init = initial_time + satkit::Duration::from_days(search.dep_start as f64);
