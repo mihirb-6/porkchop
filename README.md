@@ -25,6 +25,12 @@ The plots below compare Porkchop's output against the reference contour plot fro
 
 ---
 
+## Limitations
+1. Lambert's problem assumes ideal two-body (Keplarian) motion, and errors in small perturbations, planetary oblateness, atmospheric drag, solar radiation pressure are not accounted for. (Possible "fix" for this could be applying mid-course corrections).
+2. The Rust crate `satkit` only provides JPL ephemeris for the main 8 planets and Pluto, so small body data is not currently implemented.
+3. **Ballistic-only trajectories:** we are assuming that the calculated delta-v is delivered instantaneously
+4. **No gravity assists**: it's a little silly to plot a porkchop plot from Earth to the Jovian Planets (for example, Europa Clipper used a Mars gravity assist on it's way to Europa)
+
 ## Prerequisites
 
 - **Rust** ≥ 1.86: [rust-lang.org/tools/install](https://www.rust-lang.org/tools/install)
