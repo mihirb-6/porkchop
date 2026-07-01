@@ -1,14 +1,14 @@
 [rust_config]
-initial_time = [2027, 12, 1]
+initial_time = [2026, 2, 1]
 departure_object = "earth"
 arrival_object = "mars"
-search_limits = [0.3, # start departure
-                0.7, #  end departure
-                0.2, #  min tof
+search_limits = [0.2, # start departure
+                0.5, #  end departure
+                0.1, #  min tof
                 2.0, # max tof
-                2.0] # step size
+                1.0] # step size
 max_c3 = 50.0
-dla_limits = [-10.0, 40.0]
+dla_limits = [-50, 50.0]
 
 
 [python_config]
@@ -17,5 +17,7 @@ plot_arrival_contours = false
 plot_tof_contours = true
 plot_dla=false
 plot_rla=false
-x_cuts=[0,30]
-y_cuts=[150,0]
+x_cuts=[30,30]
+y_cuts=[200,100]
+dla_levels = [10,15,20,25,30,35]
+rla_levels = [50,60,70,80,90,100]
