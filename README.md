@@ -1,6 +1,6 @@
 # porkchop: Visualize Interplanetary Trajectory Constraints
 
-A porkchop plot generator for interplanetary mission design. Given a range of departure and arrival dates, it solves Lambert's problem across a grid of transfer trajectories and visualizes the results as a contour plot of characteristic energies (C3) derived from spacecraft excess velocities. The brute-force Lambert solver is written in Rust for speed, with Python handling visualization.
+A porkchop plot generator for interplanetary mission design. Given a range of departure and arrival dates, it solves Lambert's problem across a grid of transfer trajectories and visualizes the results as a contour plot of characteristic energies ($C_3$) derived from spacecraft excess velocities ($V_\infty{}$). The brute-force Lambert solver is written in Rust for speed, with Python handling visualization.
 
 ---
 
@@ -17,11 +17,19 @@ The plots below compare Porkchop's output against the reference contour plot fro
 <img src="https://github.com/mihirb-6/porkchop/blob/main/docs/opportunity_porkchop_plot.png" alt="Porkchop output" width="50%" height="50%"/><img src="https://github.com/mihirb-6/porkchop/blob/main/docs/perseverance_porkchop_plot.png" alt="Porkchop output" width="50%" height="50%"/>
 > The green contours represent the spacecraft's outbound launch asymptote declination, another constraint used in preliminary trajectory design.
 ---
+## Core Features
+- Departure/Launch C3 Energy ($\frac{\text{km}^2}{\text{s}^2}$) Contour Plot
+- Arrival C3 Energy ($\frac{\text{km}^2}{\text{s}^2}$) Contour Plot
+- Declination of Launch Asymptote Plot (deg)
+- Right Ascension of Launch Asymptote Plot (deg)
+- Lines of Constant Time of Flight (days)
+- Manual levels adjustment
+---
 ## How It Works
 
-1. **Rust solver** — iterates over a grid of (departure date, time-of-flight) pairs and solves Lambert's problem for each, computing the launch C3 and arrival V∞.
-2. **Python plotter** — reads the solver's output and renders contour plots with labeled C3 and V∞ curves.
-3. **`run.sh`** — orchestrates both steps in sequence.
+1. **Rust solver** — iterates over a grid of departure date and time-of-flight pairs and solves Lambert's problem for each, computing the launch and arrival $V_\infty{}$ before computing characteristic energy $C_3$.
+2. **Python plotter** — reads the solver's output and renders contour plots with labeled $C_3$ curves.
+3. **`run.sh`** — allows for manual adjustment of the solver's search parameters and general plotting functions.
 
 ---
 
