@@ -143,11 +143,15 @@ pub fn find_trajectories(
             let dla_t2 = ((dep_vinf_type2[2] / magnitude(&dep_vinf_type2)).asin()).to_degrees();
 
             // TYPE I RIGHT ASCENSION OF LAUNCH ASYMPTOTE
-            let rla_t1 = (dep_vinf_type1[1].atan2(dep_vinf_type1[0])).to_degrees();
-
+            let mut rla_t1 = (dep_vinf_type1[1].atan2(dep_vinf_type1[0])).to_degrees();
+            if rla_t1 < 0. {
+                rla_t1 += 360.;
+            }
             // TYPE II RIGHT ASCENSION OF LAUNCH ASYMPTOTE
-            let rla_t2 = (dep_vinf_type2[1].atan2(dep_vinf_type2[0])).to_degrees();
-
+            let mut rla_t2 = (dep_vinf_type2[1].atan2(dep_vinf_type2[0])).to_degrees();
+            if rla_t2 < 0. {
+                rla_t2 += 360.;
+            }
             // DEPARTURE C3 ENERGIES
             let dep_c3_type1 = magnitude(&dep_vinf_type1).powi(2);
             let dep_c3_type2 = magnitude(&dep_vinf_type2).powi(2);

@@ -1,4 +1,5 @@
 from array import array
+from pathlib import Path
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
@@ -264,7 +265,7 @@ def plot_contour(
         )
         dla_label_1 = ax.clabel(
             dla_t1_lines,
-            inline=True,
+            inline=False,
             fontsize=10,
             fmt="%.0f",
             colors="red",
@@ -280,7 +281,7 @@ def plot_contour(
         )
         dla_label_2 = ax.clabel(
             dla_t2_lines,
-            inline=True,
+            inline=False,
             fontsize=10,
             fmt="%.0f",
             colors="red",
@@ -311,11 +312,11 @@ def plot_contour(
             rla_type1,
             levels=levels,
             colors="#fc6f0a",
-            linewidths=0.3,
+            linewidths=0.6,
         )
         rla_lbl_1 = ax.clabel(
             rla_t1_lines,
-            inline=True,
+            inline=False,
             fontsize=10,
             fmt="%.0f",
             colors="#fc6f0a",
@@ -326,11 +327,11 @@ def plot_contour(
             rla_type2,
             levels=levels,
             colors="#fc6f0a",
-            linewidths=0.3,
+            linewidths=0.6,
         )
         rla_lbl_2 = ax.clabel(
             rla_t2_lines,
-            inline=True,
+            inline=False,
             fontsize=10,
             fmt="%.0f",
             colors="#fc6f0a",
@@ -381,7 +382,7 @@ def plot_contour(
     ax.set_ylim(np.min(x_type1_num) + ymin_cut, np.max(y_type1_num) - ymax_cut)
 
     # Plot Formatting
-    plt.title("2026 Earth-Mars Ballistic Transfer Trajectories", weight="bold")
+    plt.title("Ballistic Transfer Trajectories", weight="bold")
     plt.xlabel("Launch Date", weight="bold")
     plt.ylabel("Arrival Date", weight="bold")
 
@@ -447,14 +448,22 @@ def plot_contour(
 
     plt.tight_layout()
 
+    target_dir = Path.cwd().parent / "docs"
+
     # Save the plot as a png
-    plt.savefig("/Users/mihir/projects/porkchop/docs/porkchop_plot.png", dpi=300)
+    plt.savefig(f"{target_dir}/porkchop_plot.png", dpi=300)
     # plt.show()
 
 
 if __name__ == "__main__":
+    # Define parent 'porkchop' directory for the script
+    parent = Path.cwd().parent
+
+    # Filename
+    config_file = f"{parent}/config.toml"
+
     # Load the config.toml file
-    with open("/Users/mihir/projects/porkchop/config.toml", "rb") as f:
+    with open(config_file, "rb") as f:
         config = tomllib.load(f)
     py_inputs = config["python_config"]
 
@@ -463,13 +472,16 @@ if __name__ == "__main__":
     plot_arrival = py_inputs["plot_arrival_contours"]
     plot_tof_contours = py_inputs["plot_tof_contours"]
     plot_dla = py_inputs["plot_dla"]
-    dep_levels = py_inputs["dep_levels"]
-    arr_levels = py_inputs["arr_levels"]
+    # dep_levels = py_inputs["dep_levels"]
+    # arr_levels = py_inputs["arr_levels"]
     dla_levels = py_inputs["dla_levels"]
     rla_levels = py_inputs["rla_levels"]
     plot_rla = py_inputs["plot_rla"]
     x_cuts = tuple(py_inputs["x_cuts"])
     y_cuts = tuple(py_inputs["y_cuts"])
+
+    dep_levels = np.linspace(0, max_c3, 20)
+    arr_levels = np.linspace(0, max_c3, 15)
 
     plot_contour(
         dep_levels=dep_levels,
