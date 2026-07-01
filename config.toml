@@ -7,17 +7,21 @@ search_limits = [0.2, # start departure
                 0.1, #  min tof
                 2.0, # max tof
                 1.0] # step size
-max_c3 = 50.0
+max_c3 = 64.0
 dla_limits = [-50, 50.0]
 
 
 [python_config]
 plot_departure_contours = true
 plot_arrival_contours = false
-plot_tof_contours = true
-plot_dla=false
+plot_tof_contours = false
+plot_dla=true
 plot_rla=false
 x_cuts=[30,30]
 y_cuts=[200,100]
+
+dep_levels = [10,12,14,16,18,20,25,30,35,40,45,50]
+arr_levels = [10,20,30,40,50,60]
+
 dla_levels = [10,15,20,25,30,35]
 rla_levels = [50,60,70,80,90,100]

@@ -1,3 +1,5 @@
+from array import array
+
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
@@ -125,8 +127,8 @@ def plot_tof_vs_DV(pmin: float, pmax: float):
 
 # Main Porkchop Plot
 def plot_contour(
-    dep_levels: np.ndarray,  # show launch levels
-    arr_levels: np.ndarray,  # show arrival levels
+    dep_levels,  # show launch levels
+    arr_levels,  # show arrival levels
     rla_levels,
     dla_levels,
     plot_departure=True,  # show launch C3 plot
@@ -450,10 +452,6 @@ def plot_contour(
     # plt.show()
 
 
-departure_levels = np.linspace(0, max_c3, 18)
-arrival_levels = np.linspace(0, max_c3, 12)
-
-
 if __name__ == "__main__":
     # Load the config.toml file
     with open("/Users/mihir/projects/porkchop/config.toml", "rb") as f:
@@ -465,6 +463,8 @@ if __name__ == "__main__":
     plot_arrival = py_inputs["plot_arrival_contours"]
     plot_tof_contours = py_inputs["plot_tof_contours"]
     plot_dla = py_inputs["plot_dla"]
+    dep_levels = py_inputs["dep_levels"]
+    arr_levels = py_inputs["arr_levels"]
     dla_levels = py_inputs["dla_levels"]
     rla_levels = py_inputs["rla_levels"]
     plot_rla = py_inputs["plot_rla"]
@@ -472,8 +472,8 @@ if __name__ == "__main__":
     y_cuts = tuple(py_inputs["y_cuts"])
 
     plot_contour(
-        departure_levels,
-        arrival_levels,
+        dep_levels=dep_levels,
+        arr_levels=arr_levels,
         dla_levels=dla_levels,
         rla_levels=rla_levels,
         tof_contour=plot_tof_contours,
