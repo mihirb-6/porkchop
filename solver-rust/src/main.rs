@@ -3,8 +3,10 @@ use satkit::Instant;
 use satkit::prelude::*;
 use serde::Deserialize;
 use std::collections::HashMap;
+use std::env;
 use std::error::Error;
 use std::fs;
+use std::path::PathBuf;
 
 mod elements;
 mod trajectory;
@@ -29,10 +31,13 @@ struct RustConfig {
     dla_limits: (f64, f64),
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let mut config_dir = env::current_dir()?;
+    config_dir.pop();
+
+    config_dir = config_dir.join("config.toml");
     // Read config.toml file
-    let file_content = fs::read_to_string("/Users/mihir/projects/porkchop/config.toml")
-        .expect("Failed to read config file");
+    let file_content = fs::read_to_string(config_dir).expect("Failed to read config file");
     let config: Config = toml::from_str(&file_content).expect("Failed to parse TOML");
 
     // Define year, month, day from config
@@ -152,10 +157,18 @@ fn main() {
         })
         .collect();
 
+    let mut plot_dir = env::current_dir()?;
+    plot_dir.pop();
+    plot_dir = plot_dir.join("plotter-python");
+
     // Write data to separate csv's
-    let type1_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv";
-    let type2_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEII_DATA.csv";
-    let meta_path = "/Users/mihir/projects/porkchop/plotter-python/METADATA.csv";
+    let type1_path = plot_dir.join("TYPEI_DATA.csv");
+    let type2_path = plot_dir.join("TYPEII_DATA.csv");
+    let meta_path = plot_dir.join("METADATA.csv");
+    //let type1_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEI_DATA.csv";
+    //let type2_path = "/Users/mihir/projects/porkchop/plotter-python/TYPEII_DATA.csv";
+    // let meta_path = "/Users/mihir/projects/porkchop/plotter-python/METADATA.csv";
+
     write_to_csv(type1_path, &type1_data).unwrap();
     write_to_csv(type2_path, &type2_data).unwrap();
 
@@ -163,14 +176,16 @@ fn main() {
     let mut metadata_vector: Vec<(Instant, SearchBounds, f64)> = Vec::new();
     metadata_vector.push((initial_time, search.clone(), max_c3));
     write_metadata_to_csv(meta_path, &metadata_vector).unwrap();
+
+    Ok(())
 }
 
 /* Helper Funcion to write trajectory data to a CSV file */
 fn write_to_csv(
-    path: &'static str,
+    path: PathBuf, //&'static str,
     data: &Vec<(Instant, Instant, f64, f64, f64, f64)>,
 ) -> Result<(), Box<dyn Error>> {
-    println!("Writing {}...", path);
+    println!("Writing {}...", path.display());
 
     let mut wtr = Writer::from_path(path)?;
 
@@ -203,9 +218,11 @@ fn write_to_csv(
 
 /* Similar helper function to write misc values to a metadata CSV file */
 fn write_metadata_to_csv(
-    path: &'static str,
+    path: PathBuf, //&'static str,
     data: &Vec<(Instant, SearchBounds, f64)>,
 ) -> Result<(), Box<dyn Error>> {
+    println!("Writing {}...", path.display());
+
     let mut wtr = Writer::from_path(path)?;
 
     wtr.write_record(&[
