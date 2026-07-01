@@ -1,6 +1,6 @@
 [package]
 name = "porkchop"
-author = "Mihir Bhagat"
+#author = "Mihir Bhagat"
 version = "0.1.0"
 edition = "2024"
 
