@@ -1,13 +1,12 @@
-use std::f64::consts::PI;
-
 use lambert_izzo::{LambertInput, RevolutionBudget, TransferWay, lambert};
 use satkit::consts::MU_SUN;
 use satkit::jplephem::barycentric_state;
 use satkit::{Duration, Instant};
 
-// (start, stop, step size)
+// A range struct similar to np.arange(): (start, stop, step size)
 struct StepRange(f64, f64, f64);
 
+// Implementing an Iterator for StepRange
 impl Iterator for StepRange {
     type Item = f64;
 
@@ -87,6 +86,7 @@ pub fn find_trajectories(
 
             let tof_s = tof as f64 * 86400.;
 
+            // CONSTRUCT TYPE I LAMBERT SOLVER INPUT
             let short_input = LambertInput {
                 r1: r1,
                 r2: r2,
@@ -95,6 +95,7 @@ pub fn find_trajectories(
                 way: TransferWay::Short,
                 revolutions: RevolutionBudget::SingleOnly,
             };
+            // CONSTRUCT TYPE II LAMBERT SOLVER INPUT
             let long_input = LambertInput {
                 r1: r1,
                 r2: r2,
@@ -103,50 +104,49 @@ pub fn find_trajectories(
                 way: TransferWay::Long,
                 revolutions: RevolutionBudget::SingleOnly,
             };
+
+            // Find solution to Lambert's Problem using LambertInput
             let short = lambert(&short_input).unwrap();
             let long = lambert(&long_input).unwrap();
 
+            // Not necessary, just for readability
             let v1_short = short.single.v1;
             let v2_short = short.single.v2;
 
             let v1_long = long.single.v1;
             let v2_long = long.single.v2;
 
-            // DEPARTURE EXCESS VELOCITIES
+            // TYPE I DEPARTURE EXCESS VELOCITY
             let dep_vinf_type1: [f64; 3] = [
                 v1_short[0] - v1[0],
                 v1_short[1] - v1[1],
                 v1_short[2] - v1[2],
             ];
+            // TYPE II DEPARTURE EXCESS VELOCITY
             let dep_vinf_type2: [f64; 3] =
                 [v1_long[0] - v1[0], v1_long[1] - v1[1], v1_long[2] - v1[2]];
 
-            // ARRIVAL EXCESS VELOCITIES
+            // TYPE I ARRIVAL EXCESS VELOCITY
             let arr_vinf_type1: [f64; 3] = [
                 v2_short[0] - v2[0],
                 v2_short[1] - v2[1],
                 v2_short[2] - v2[2],
             ];
+            // TYPE II ARRIVAL EXCESS VELOCITY
             let arr_vinf_type2: [f64; 3] =
                 [v2_long[0] - v2[0], v2_long[1] - v2[1], v2_long[2] - v2[2]];
 
-            // TYPE I DEPARTURE LAUNCH ASYMPTOTE
+            // TYPE I DECLINATION OF LAUNCH ASYMPTOTE
             let dla_t1 = ((dep_vinf_type1[2] / magnitude(&dep_vinf_type1)).asin()).to_degrees();
 
-            //TYPE II DEPARTURE LAUNCH ASYMPTOTE
+            //TYPE II DECLINATION OF LAUNCH ASYMPTOTE
             let dla_t2 = ((dep_vinf_type2[2] / magnitude(&dep_vinf_type2)).asin()).to_degrees();
 
-            // TYPE I ARRIVAL LAUNCH ASYMPTOTE
-            let mut rla_t1 = (arr_vinf_type1[1].atan2(arr_vinf_type1[0])).to_degrees();
-            if rla_t1 < 0f64 {
-                rla_t1 += 360_f64;
-            }
+            // TYPE I RIGHT ASCENSION OF LAUNCH ASYMPTOTE
+            let rla_t1 = (dep_vinf_type1[1].atan2(dep_vinf_type1[0])).to_degrees();
 
-            // TYPE II ARRIVAL LAUNCH ASYMPTOTE
-            let mut rla_t2 = (arr_vinf_type2[1].atan2(arr_vinf_type2[0])).to_degrees();
-            if rla_t2 < 0f64 {
-                rla_t2 += 360_f64;
-            }
+            // TYPE II RIGHT ASCENSION OF LAUNCH ASYMPTOTE
+            let rla_t2 = (dep_vinf_type2[1].atan2(dep_vinf_type2[0])).to_degrees();
 
             // DEPARTURE C3 ENERGIES
             let dep_c3_type1 = magnitude(&dep_vinf_type1).powi(2);
@@ -156,6 +156,7 @@ pub fn find_trajectories(
             let arr_c3_type1 = magnitude(&arr_vinf_type1).powi(2);
             let arr_c3_type2 = magnitude(&arr_vinf_type2).powi(2);
 
+            // Push to respective vectors
             type1_data.push((
                 departure_date,
                 arrival_date,
@@ -175,6 +176,7 @@ pub fn find_trajectories(
         }
     }
 
+    // Print the number of trajectories (data points) found
     println!(
         "Found {} Type 1 and {} Type 2 Trajectories",
         type1_data.len(),
