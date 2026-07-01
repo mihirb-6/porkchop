@@ -86,10 +86,11 @@ python plot.py
 
 ```
 porkchop/
-├── solver-rust/        # Lambert solver (Rust)
-├── plotter-python/     # Contour plot generator (Python)
+├── solver-rust/        # Lambert solver (Rust) [main.rs, trajectory.rs, elements.rs]
+├── plotter-python/     # Contour plot generator (Python) [plot.py]
 ├── docs/               # Output images and reference plots
 ├── run.sh              # End-to-end pipeline script
+├── config.toml         # TOML to configure search/plot parameters from both Python and Rust
 └── README.md
 ```
 
