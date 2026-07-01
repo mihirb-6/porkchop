@@ -12,11 +12,13 @@ mod trajectory;
 use crate::elements::{find_periods, hohmann_transfer_time};
 use crate::trajectory::{SearchBounds, find_trajectories};
 
+// Part of the config.toml parse
 #[derive(Deserialize, Debug)]
 struct Config {
     rust_config: RustConfig,
 }
 
+// Another part of config.toml, this struct defines what parameters can change in the toml
 #[derive(Deserialize, Debug)]
 struct RustConfig {
     initial_time: (i32, i32, i32),
@@ -28,18 +30,22 @@ struct RustConfig {
 }
 
 fn main() {
+    // Read config.toml file
     let file_content = fs::read_to_string("/Users/mihir/projects/porkchop/config.toml")
         .expect("Failed to read config file");
     let config: Config = toml::from_str(&file_content).expect("Failed to parse TOML");
 
+    // Define year, month, day from config
     let (yyyy, mm, dd) = config.rust_config.initial_time;
 
+    // Define launch and arrival planet from config
     let dep_obj = config.rust_config.departure_object;
     let arr_obj = config.rust_config.arrival_object;
 
     // Define initial time
     let initial_time = Instant::from_date(yyyy, mm, dd).unwrap();
 
+    // Dictionary to store key-value pair of planet and satkit's solar system object
     let pl_hashmap: HashMap<String, SolarSystem> = HashMap::from([
         (String::from("mercury"), SolarSystem::Mercury),
         (String::from("venus"), SolarSystem::Venus),
@@ -77,13 +83,16 @@ fn main() {
     let syn_p = find_periods(departure_object, arrival_object, initial_time).synodic_period;
     println!("Synodic Period: {:.2} days...", syn_p);
 
+    // Hohmann Transfer Time
     let hohmann_t = hohmann_transfer_time(departure_object, arrival_object, initial_time);
     println!("Hohmann Transfer Time: {:.2} days...", hohmann_t);
 
     println!("===========================================================");
 
+    // Define search limits
     let (start, end, min, max, step) = config.rust_config.search_limits;
 
+    // Construct search
     let search = SearchBounds {
         dep_start: (start * syn_p) as i32,
         dep_end: (end * syn_p) as i32,
@@ -92,14 +101,17 @@ fn main() {
         step_size: step,
     };
 
+    // For the print statement below
     let d_init = initial_time + satkit::Duration::from_days(search.dep_start as f64);
     let d_end = initial_time + satkit::Duration::from_days(search.dep_end as f64);
 
+    // Prints departure dates
     println!(
         "Departure range {} - {}",
         d_init.strftime("%B-%d-%Y %H:%M:%S").unwrap(),
         d_end.strftime("%B-%d-%Y %H:%M:%S").unwrap(),
     );
+    //Prints range of TOF
     println!(
         "TOF range [{:.2} - {:.2}] days",
         search.tof_min, search.tof_max
@@ -125,7 +137,7 @@ fn main() {
             )
         })
         .collect();
-
+    // Do same for type II data
     type2_data = type2_data
         .iter()
         .map(|(dep_date, arr_date, dep_c3, arr_c3, dla, rla)| {
@@ -147,12 +159,13 @@ fn main() {
     write_to_csv(type1_path, &type1_data).unwrap();
     write_to_csv(type2_path, &type2_data).unwrap();
 
+    // Write "metadata"/misc values that help with plotting in Python
     let mut metadata_vector: Vec<(Instant, SearchBounds, f64)> = Vec::new();
     metadata_vector.push((initial_time, search.clone(), max_c3));
     write_metadata_to_csv(meta_path, &metadata_vector).unwrap();
 }
 
-/* Helper Funcion to write trajectory data to a CSV */
+/* Helper Funcion to write trajectory data to a CSV file */
 fn write_to_csv(
     path: &'static str,
     data: &Vec<(Instant, Instant, f64, f64, f64, f64)>,
@@ -188,6 +201,7 @@ fn write_to_csv(
     Ok(())
 }
 
+/* Similar helper function to write misc values to a metadata CSV file */
 fn write_metadata_to_csv(
     path: &'static str,
     data: &Vec<(Instant, SearchBounds, f64)>,
