@@ -294,16 +294,28 @@ def plot_contour(
     if rla:
         if dep_lbl_1 is not None:
             for label in dep_lbl_1:
-                label.remove()
+                try:
+                    label.remove()
+                except ValueError:
+                    pass
         if dep_lbl_2 is not None:
             for label in dep_lbl_2:
-                label.remove()
+                try:
+                    label.remove()
+                except ValueError:
+                    pass
         if arr_lbl_1 is not None:
             for label in arr_lbl_1:
-                label.remove()
+                try:
+                    label.remove()
+                except ValueError:
+                    pass
         if arr_lbl_2 is not None:
             for label in arr_lbl_2:
-                label.remove()
+                try:
+                    label.remove()
+                except ValueError:
+                    pass
 
         levels = rla_levels
         rla_t1_lines = ax.tricontour(
@@ -394,56 +406,125 @@ def plot_contour(
         Line2D([0], [0], color="#d9311e", lw=1),  # arrival
         Line2D([0], [0], color="#5aa5e8", lw=1),  # departure
         Line2D([0], [0], color="red", lw=1),  # dla
+        Line2D([0], [0], color="#fc6f0a", lw=1),  # rla
     ]
 
     # For consisent legend labeling:
-    match (plot_departure, plot_arrival, dla):
-        case (True, True, False):  # arrival + departure
+    match (plot_departure, plot_arrival, dla, rla):
+        case (True, True, False, False):  # arrival + departure
             plt.legend(
                 lines,
                 ["Arrival C3 [${km^2}/{s^2}$]", "Departure C3 [${km^2}/{s^2}$]"],
             )
-        case (True, False, False):  # departure only
+        case (True, False, False, False):  # departure
             plt.legend(
-                lines[1:],
+                [lines[1]],
                 ["Departure C3 [${km^2}/{s^2}$]"],
             )
-        case (False, True, False):  # arrival only
+        case (False, True, False, False):  # arrival
             plt.legend(
-                lines[:1],
+                [lines[0]],
                 ["Arrival C3 [${km^2}/{s^2}$]"],
             )
-        case (False, False, True):  # dla
+        case (False, False, True, False):  # dla
             plt.legend(
-                lines[:2],
+                [lines[2]],
                 ["Declination of Launch Asymptote [deg]"],
             )
-        case (True, True, True):  # arrival + departure + dla
+        case (True, True, True, False):  # arrival + departure + dla
+            plt.legend(
+                [lines[0], lines[1], lines[2]],
+                [
+                    "Arrival C3 [${km^2}/{s^2}$]",
+                    "Departure C3 [${km^2}/{s^2}$]",
+                    "Declination of Launch Asymptote [deg]",
+                ],
+            )
+        case (True, False, True, False):  # departure + dla
+            plt.legend(
+                lines[1:],
+                [
+                    "Departure C3 [${km^2}/{s^2}$]",
+                    "Declination of Launch Asymptote [deg]",
+                ],
+            )
+        case (False, True, True, False):  # arrival + dla
+            plt.legend(
+                [lines[0], lines[2]],
+                [
+                    "Arrival C3 [${km^2}/{s^2}$]",
+                    "Declination of Launch Asymptote [deg]",
+                ],
+            )
+        case (False, False, False, True):  # rla
+            plt.legend(
+                [lines[3]],
+                [
+                    "Right Ascension of Launch Asymptote [deg]",
+                ],
+            )
+        case (False, False, True, True):  # dla + rla
+            plt.legend(
+                [lines[2], lines[3]],
+                [
+                    "Declination of Launch Asymptote [deg]",
+                    "Right Ascension of Launch Asymptote [deg]",
+                ],
+            )
+        case (True, False, True, True):  # departure + dla + rla
+            plt.legend(
+                lines[1:],
+                [
+                    "Departure C3 [${km^2}/{s^2}$]",
+                    "Declination of Launch Asymptote [deg]",
+                    "Right Ascension of Launch Asymptote [deg]",
+                ],
+            )
+        case (True, True, True, True):  # departure + arrival + dla + rla
             plt.legend(
                 lines,
                 [
-                    "Arrival C3 [${km^2}/{s^2}$]",
                     "Departure C3 [${km^2}/{s^2}$]",
-                    "Declination of Launch Asymptote [deg]",
-                ],
-            )
-        case (True, False, True):  # departure only + dla
-            plt.legend(
-                lines[1:],
-                [
-                    "Departure C3 [${km^2}/{s^2}$]",
-                    "Declination of Launch Asymptote [deg]",
-                ],
-            )
-        case (False, True, True):  # arrival only + dla
-            plt.legend(
-                lines[::2],
-                [
                     "Arrival C3 [${km^2}/{s^2}$]",
                     "Declination of Launch Asymptote [deg]",
+                    "Right Ascension of Launch Asymptote [deg]",
                 ],
             )
-        case (False, False, False):  #  none
+        case (True, False, False, True):  # departure + rla
+            plt.legend(
+                [lines[1], lines[3]],
+                [
+                    "Departure C3 [${km^2}/{s^2}$]",
+                    "Right Ascension of Launch Asymptote [deg]",
+                ],
+            )
+        case (False, True, False, True):  # arrival + rla
+            plt.legend(
+                [lines[0], lines[3]],
+                [
+                    "Arrival C3 [${km^2}/{s^2}$]",
+                    "Right Ascension of Launch Asymptote [deg]",
+                ],
+            )
+        case (False, True, True, True):  # arrival + dla + rla
+            plt.legend(
+                [lines[0], lines[2], lines[3]],
+                [
+                    "Arrival C3 [${km^2}/{s^2}$]",
+                    "Declination of Launch Asymptote [deg]",
+                    "Right Ascension of Launch Asymptote [deg]",
+                ],
+            )
+        case (True, True, False, True):  # departure + arrival + rla
+            plt.legend(
+                [lines[0], lines[1], lines[3]],
+                [
+                    "Departure C3 [${km^2}/{s^2}$]",
+                    "Arrival C3 [${km^2}/{s^2}$]",
+                    "Right Ascension of Launch Asymptote [deg]",
+                ],
+            )
+        case (False, False, False, False):  #  none
             pass
 
     plt.tight_layout()
