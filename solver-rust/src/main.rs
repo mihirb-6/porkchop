@@ -227,7 +227,7 @@ fn write_metadata_to_csv(
 
     wtr.write_record(&[
         "Initial Time",
-        "Min Departure [Days]",
+        "Min Departure [Days]", 
         "Max Departure [Days]",
         "Min TOF [Days]",
         "Max TOF [Days]",

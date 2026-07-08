@@ -1,4 +1,5 @@
-from array import array
+
+
 from pathlib import Path
 
 import matplotlib.dates as mdates
@@ -8,6 +9,7 @@ import pandas as pd
 import tomllib
 from labellines import labelLines
 from matplotlib.lines import Line2D
+from matplotlib.widgets import RadioButtons
 
 plt.style.use("dark_background")
 
@@ -66,13 +68,6 @@ tofs = np.array([tof_type1, tof_type1, tof_type2, tof_type2])
 delta_vs = np.array(
     [deltaV_dep_type1, deltaV_arr_type1, deltaV_dep_type2, deltaV_arr_type2]
 )
-
-
-# Function that takes a set of clabels and draws a bbox behind it for clearer visibility
-def add_bbox(label_set):
-    for label in label_set:
-        label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
-        label.set_rotation(0)
 
 
 # TOF vs Delta-V plot
@@ -147,7 +142,7 @@ def plot_contour(
     ymin_cut, ymax_cut = y_cuts
 
     # Some constants for the plot
-    c_fontsize = 10
+    c_fontsize = 8
     lws = 0.5
 
     # Create fig + ax objects
@@ -169,6 +164,8 @@ def plot_contour(
             cmap="Blues",
             linewidths=lws,
         )
+
+        # Add Labels to Contour Lines
         dep_lbl_1 = ax.clabel(
             type1_dep_lines,
             inline=False,
@@ -186,10 +183,11 @@ def plot_contour(
             cmap="Blues",
             linewidths=lws,
         )
+
+        # Add Labels to Contour Lines
         dep_lbl_2 = ax.clabel(
             type2_dep_lines,
             inline=False,
-            inline_spacing=0,
             fontsize=c_fontsize,
             fmt="%.0f",
             colors="white",
@@ -365,7 +363,7 @@ def plot_contour(
                 xs, y_lines, "white", lw=1, alpha=0.9, label=f"{tof:.0f}", linestyle=":"
             )
 
-        labelLines(ax.get_lines(), align=True, clip_on=True, xvals=min + 20, fontsize=6)
+        labelLines(ax.get_lines(), align=True, clip_on=True, xvals=min + 20, fontsize=8)
 
     """
     To mark a single point on the plot:
@@ -533,7 +531,14 @@ def plot_contour(
 
     # Save the plot as a png
     plt.savefig(f"{target_dir}/porkchop_plot.png", dpi=300)
-    # plt.show()
+    #plt.show()
+
+
+# Function that takes a set of clabels and draws a bbox behind it for clearer visibility
+def add_bbox(label_set):
+    for label in label_set:
+        label.set_bbox(dict(facecolor="black", edgecolor="none", pad=0.1))
+        label.set_rotation(0)
 
 
 if __name__ == "__main__":
@@ -552,17 +557,18 @@ if __name__ == "__main__":
     plot_departure = py_inputs["plot_departure_contours"]
     plot_arrival = py_inputs["plot_arrival_contours"]
     plot_tof_contours = py_inputs["plot_tof_contours"]
+
     plot_dla = py_inputs["plot_dla"]
-    # dep_levels = py_inputs["dep_levels"]
-    # arr_levels = py_inputs["arr_levels"]
+    dep_levels = py_inputs["dep_levels"]
+    arr_levels = py_inputs["arr_levels"]
     dla_levels = py_inputs["dla_levels"]
     rla_levels = py_inputs["rla_levels"]
     plot_rla = py_inputs["plot_rla"]
     x_cuts = tuple(py_inputs["x_cuts"])
     y_cuts = tuple(py_inputs["y_cuts"])
 
-    dep_levels = np.linspace(0, max_c3, 20)
-    arr_levels = np.linspace(0, max_c3, 15)
+    # dep_levels = np.linspace(0, max_c3, 20)
+    # arr_levels = np.linspace(0, max_c3, 15)
 
     plot_contour(
         dep_levels=dep_levels,
