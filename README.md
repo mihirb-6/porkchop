@@ -29,7 +29,8 @@ The plots below compare Porkchop's output against the reference contour plot fro
 
 1. **Rust solver** — iterates over a grid of departure date and time-of-flight pairs and solves Lambert's problem for each, computing the launch and arrival $V_\infty{}$ before computing characteristic energy $C_3$.
 2. **Python plotter** — reads the solver's output and renders contour plots with labeled $C_3$ curves.
-3. **`run.sh`** — allows for manual adjustment of the solver's search parameters and general plotting functions.
+3. **`config.toml`** - a file to configure everything from the constraints of the launch window to the elements that are displayed on the porkchop plot.
+4. **`run.sh`** — runs both the solver and plotter, leaving a porkchop plot in `docs`.
 
 ---
 
